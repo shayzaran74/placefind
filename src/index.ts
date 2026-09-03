@@ -20,7 +20,23 @@ const app = express();
 
 app.set('trust proxy', 1);
 app.use(helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: false }));
-app.use(cors());
+
+const corsOrigins = config.corsOrigin
+  ? config.corsOrigin.split(',').map((o) => o.trim()).filter(Boolean)
+  : ['*'];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || corsOrigins.includes('*') || corsOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(null, true);
+      }
+    },
+    credentials: true,
+  })
+);
 app.use(compression());
 app.use(express.json({ limit: '1mb' }));
 app.use(requestLogger);

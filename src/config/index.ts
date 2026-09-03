@@ -28,6 +28,7 @@ export const config = {
   uploadsDir: path.resolve(process.env.UPLOADS_DIR || './uploads/images'),
   /** Public CDN/S3 origin prefixed to stored .webp paths. Empty => relative paths. */
   cdnBaseUrl: (process.env.CDN_BASE_URL || '').replace(/\/$/, ''),
+  corsOrigin: process.env.CORS_ORIGIN || '*',
 
   /**
    * Place data providers. The Playwright Google Maps scraper is the default so
