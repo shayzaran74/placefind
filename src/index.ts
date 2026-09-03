@@ -10,6 +10,7 @@ import venueRoutes from './routes/venue.routes';
 import { Venue } from './models/Venue';
 import { errorHandler, notFoundHandler, asyncHandler } from './middleware/error';
 import { requestLogger } from './middleware/logger';
+import { basicAuth } from './middleware/auth';
 import { getQueueStats, closeQueue } from './queue/scrape.queue';
 import { closeRedis } from './queue/connection';
 import { GooglePlacesService } from './services/googlePlaces.service';
@@ -40,6 +41,9 @@ app.use(
 app.use(compression());
 app.use(express.json({ limit: '1mb' }));
 app.use(requestLogger);
+
+// Username/password gate in front of everything but /health.
+app.use(basicAuth);
 
 // Serve the static dashboard
 app.use(express.static(path.join(__dirname, '../public')));

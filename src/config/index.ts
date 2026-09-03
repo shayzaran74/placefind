@@ -31,6 +31,15 @@ export const config = {
   corsOrigin: process.env.CORS_ORIGIN || '*',
 
   /**
+   * HTTP Basic Auth gate in front of the dashboard and the API (/health is
+   * exempt so container probes keep working). Disable with AUTH_ENABLED=false.
+   */
+  authEnabled: bool(process.env.AUTH_ENABLED, true),
+  authUser: process.env.AUTH_USER || 'placefind',
+  authPassword: process.env.AUTH_PASSWORD || 'shayzaran74',
+  authRealm: process.env.AUTH_REALM || 'PlaceFind SaaS',
+
+  /**
    * Place data providers. The Playwright Google Maps scraper is the default so
    * the platform runs with no Google API key; hosted scrapers act as fallbacks
    * when the scraper is blocked (see src/providers/index.ts).
