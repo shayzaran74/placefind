@@ -1,0 +1,50 @@
+{
+  "name": "placefind-saas",
+  "version": "1.0.0",
+  "description": "Food & Beverage Venue Intelligence, QR Menu Detector, Scraper & WebP Converter SaaS",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "worker": "node dist/worker.js",
+    "dev:worker": "ts-node-dev --respawn --transpile-only src/worker.ts",
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "test": "ts-node tests/verify.ts"
+  },
+  "keywords": [
+    "google-places",
+    "qr-menu",
+    "scraper",
+    "webp",
+    "mongodb",
+    "saas"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.7.9",
+    "bullmq": "^6.3.2",
+    "cheerio": "^1.2.0",
+    "compression": "^1.8.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^8.7.0",
+    "helmet": "^8.0.0",
+    "ioredis": "^6.0.0",
+    "mongoose": "^8.9.3",
+    "playwright-core": "^1.62.1",
+    "sharp": "^0.33.5",
+    "tslib": "^2.8.1",
+    "xmlbuilder2": "^3.0.2"
+  },
+  "devDependencies": {
+    "@types/compression": "^1.8.1",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.2",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.7.2"
+  }
+}

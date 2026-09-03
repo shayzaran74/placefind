@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="tr" class="h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PlaceFind SaaS — Mekan, QR Menü & Veri İstihbarat Paneli</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .field {
+      width: 100%;
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      color: #e2e8f0;
+      font-size: 0.875rem;
+      border-radius: 0.75rem;
+      padding: 0.625rem 0.875rem;
+      outline: none;
+    }
+    .field:focus { box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.5); }
+    .label { display:block; font-size:0.7rem; font-weight:600; color:#cbd5e1; margin-bottom:0.375rem; }
+    .chip { font-size:0.65rem; font-weight:700; padding:0.15rem 0.5rem; border-radius:9999px; border-width:1px; }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+  </style>
+</head>
+<body class="h-full bg-slate-950 flex flex-col min-h-screen">
+
+  <header class="glass-panel sticky top-0 z-40 border-b border-slate-800/80 bg-slate-950/85">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between gap-4 flex-wrap">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-emerald-500 flex items-center justify-center text-slate-950 font-bold text-xl shadow-lg shadow-amber-500/20">
+          <i class="fa-solid fa-utensils"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-extrabold tracking-tight text-white flex items-center gap-2">
+            PlaceFind <span class="text-xs px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-semibold">SaaS v1.1</span>
+          </h1>
+          <p class="text-xs text-slate-400">Maps Scraper (API'siz) • 2dsphere GEO • QR Menü Audit • Playwright • WebP Pipeline</p>
+        </div>
+      </div>
+      <div id="systemStatus" class="flex items-center gap-2 text-xs"></div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+
+    <!-- ── Stats strip ─────────────────────────────────────────────────────── -->
+    <section id="statsStrip" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3"></section>
+
+    <!-- ── Scan panel ──────────────────────────────────────────────────────── -->
+    <section class="glass-panel rounded-2xl p-6 shadow-2xl border border-slate-800 relative overflow-hidden">
+      <div class="absolute -top-24 -right-24 w-60 h-60 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div class="mb-5">
+        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-location-dot text-amber-400"></i> Bölgesel Mekan ve QR Menü Taraması
+        </h2>
+        <p class="text-xs text-slate-400 mt-1">Google Maps'ten mekanları ücretsiz çekin; web sitesi denetimi, menü scraping ve WebP dönüşümü worker'da kuyruğa alınır.</p>
+      </div>
+
+      <form id="searchForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div>
+          <label class="label">Örnek Bölge</label>
+          <select id="presetSelect" class="field">
+            <option value="40.9876,29.0234">Kadıköy / Moda (İstanbul)</option>
+            <option value="41.0789,29.0432">Bebek / Beşiktaş (İstanbul)</option>
+            <option value="41.0256,28.9744">Karaköy / Beyoğlu (İstanbul)</option>
+            <option value="38.4237,27.1428">Alsancak (İzmir)</option>
+            <option value="39.9208,32.8541">Kızılay / Çankaya (Ankara)</option>
+            <option value="36.8969,30.7133">Muratpaşa (Antalya)</option>
+          </select>
+        </div>
+        <div>
+          <label class="label">Enlem</label>
+          <input type="number" step="0.0001" id="latInput" value="40.9876" class="field">
+        </div>
+        <div>
+          <label class="label">Boylam</label>
+          <input type="number" step="0.0001" id="lngInput" value="29.0234" class="field">
+        </div>
+        <div>
+          <label class="label">Yarıçap (m)</label>
+          <input type="number" step="100" min="1" max="50000" id="radiusInput" value="2000" class="field">
+        </div>
+        <div>
+          <label class="label">Arama Kelimesi</label>
+          <input type="text" id="keywordInput" value="cafe" placeholder="cafe, restoran..." class="field">
+        </div>
+        <div>
+          <label class="label">Veri Kaynağı</label>
+          <select id="providerSelect" class="field">
+            <option value="">Varsayılan zincir</option>
+            <option value="maps_scraper">Maps Scraper (ücretsiz)</option>
+            <option value="outscraper">Outscraper (yedek)</option>
+            <option value="apify">Apify (yedek)</option>
+            <option value="places_api">Google Places API</option>
+          </select>
+        </div>
+        <div>
+          <label class="label">Maks. Sonuç</label>
+          <input type="number" min="1" max="120" id="maxResultsInput" value="20" class="field">
+        </div>
+        <div class="flex items-end">
+          <button type="submit" id="searchBtn" class="w-full bg-gradient-to-r from-amber-500 to-emerald-500 hover:from-amber-400 hover:to-emerald-400 text-slate-950 font-bold text-sm py-2.5 px-4 rounded-xl shadow-lg shadow-amber-500/20 transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-magnifying-glass"></i> Tara
+          </button>
+        </div>
+
+        <div class="lg:col-span-4 flex flex-wrap items-center gap-5 pt-1">
+          <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+            <input type="checkbox" id="asyncToggle" checked class="accent-amber-500 w-4 h-4"> Kuyruğa al (Redis worker)
+          </label>
+          <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+            <input type="checkbox" id="forceToggle" class="accent-amber-500 w-4 h-4"> Mevcut kayıtları yeniden işle
+          </label>
+          <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+            <input type="checkbox" id="photosToggle" class="accent-amber-500 w-4 h-4"> Mekan fotoğraflarını WebP'ye çevir
+          </label>
+        </div>
+      </form>
+
+      <div id="scanFeedback" class="hidden mt-4 rounded-xl border px-4 py-3 text-xs"></div>
+    </section>
+
+    <!-- ── URL ingest panel ────────────────────────────────────────────────── -->
+    <section class="glass-panel rounded-2xl p-6 shadow-2xl border border-slate-800 relative overflow-hidden">
+      <div class="absolute -top-24 -left-24 w-60 h-60 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div class="mb-5">
+        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-link text-sky-400"></i> Adresten Menü ve Künye Çıkarma
+        </h2>
+        <p class="text-xs text-slate-400 mt-1">
+          Bildiğiniz QR menü / restoran adreslerini yapıştırın. Scraper giriş sayfasından bölüm
+          sayfalarını gezer; menüyü, adresi, konumu, telefonu, sosyal hesapları, ödeme yöntemlerini
+          ve dilleri çıkarıp WebP'ye çevirir.
+        </p>
+      </div>
+
+      <form id="ingestForm" class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        <div class="lg:col-span-4">
+          <label class="label">Adresler (her satıra bir tane, en fazla 25)</label>
+          <textarea id="ingestUrls" rows="3" class="field font-mono text-xs"
+            placeholder="https://menu.barispide1998.com/&#10;https://ornek-restoran.com/menu"></textarea>
+        </div>
+        <div>
+          <label class="label">Mekan Adı (opsiyonel, tek adres)</label>
+          <input type="text" id="ingestName" placeholder="sayfadan okunur" class="field">
+        </div>
+        <div>
+          <label class="label">Maks. Sayfa</label>
+          <input type="number" min="1" max="60" id="ingestMaxPages" value="20" class="field">
+        </div>
+        <div class="flex items-end gap-3 lg:col-span-1 flex-wrap">
+          <label class="flex items-center gap-1.5 text-xs text-slate-300 cursor-pointer">
+            <input type="checkbox" id="ingestForce" checked class="accent-sky-500 w-4 h-4"> Yeniden işle
+          </label>
+          <label class="flex items-center gap-1.5 text-xs text-slate-300 cursor-pointer">
+            <input type="checkbox" id="ingestPhotos" checked class="accent-sky-500 w-4 h-4"> Logo/kapak
+          </label>
+          <label class="flex items-center gap-1.5 text-xs text-amber-300 font-semibold cursor-pointer" title="Kuyruk yerine anında tarayıp sonucu ekrana getirir">
+            <input type="checkbox" id="ingestSync" checked class="accent-amber-500 w-4 h-4"> Anında işle
+          </label>
+        </div>
+        <div class="flex items-end">
+          <button type="submit" id="ingestBtn" class="w-full bg-gradient-to-r from-sky-500 to-indigo-500 hover:from-sky-400 hover:to-indigo-400 text-slate-950 font-bold text-sm py-2.5 px-4 rounded-xl shadow-lg shadow-sky-500/20 transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-download"></i> Menüyü Çek
+          </button>
+        </div>
+      </form>
+
+      <div id="ingestFeedback" class="hidden mt-4 rounded-xl border px-4 py-3 text-xs"></div>
+    </section>
+
+    <!-- ── Filters ─────────────────────────────────────────────────────────── -->
+    <section class="glass-panel rounded-2xl p-5 border border-slate-800">
+      <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+        <h2 class="text-sm font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-filter text-emerald-400"></i> Veritabanı Filtreleri
+        </h2>
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="text-xs text-slate-400 mr-1">Toplu dışa aktar:</span>
+          <button data-bulk="json" class="bulkExport chip border-sky-500/30 bg-sky-500/10 text-sky-300 hover:bg-sky-500/20 transition">JSON</button>
+          <button data-bulk="xml" class="bulkExport chip border-purple-500/30 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 transition">XML</button>
+          <button data-bulk="csv" class="bulkExport chip border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 transition">CSV</button>
+        </div>
+      </div>
+
+      <form id="filterForm" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-8 gap-3">
+        <div><label class="label">Ara</label><input type="text" id="fq" placeholder="mekan adı" class="field"></div>
+        <div><label class="label">Şehir</label><input type="text" id="fcity" placeholder="İstanbul" class="field"></div>
+        <div><label class="label">İlçe</label><input type="text" id="fdistrict" placeholder="Kadıköy" class="field"></div>
+        <div>
+          <label class="label">QR Menü</label>
+          <select id="fqr" class="field"><option value="">Tümü</option><option value="true">Var</option><option value="false">Yok</option></select>
+        </div>
+        <div>
+          <label class="label">E-posta</label>
+          <select id="femail" class="field"><option value="">Tümü</option><option value="true">Var</option><option value="false">Yok</option></select>
+        </div>
+        <div>
+          <label class="label">Durum</label>
+          <select id="fstatus" class="field">
+            <option value="">Tümü</option>
+            <option value="completed">Tamamlandı</option>
+            <option value="captcha_blocked">Engellendi</option>
+            <option value="failed">Hata</option>
+            <option value="queued">Kuyrukta</option>
+          </select>
+        </div>
+        <div>
+          <label class="label">Veri Kaynağı</label>
+          <select id="fsource" class="field">
+            <option value="">Tümü</option>
+            <option value="web_menu">Adresten alınan</option>
+            <option value="maps_scraper">Maps Scraper</option>
+            <option value="google_places">Places API</option>
+            <option value="outscraper">Outscraper</option>
+            <option value="apify">Apify</option>
+            <option value="mock">Örnek veri</option>
+          </select>
+        </div>
+        <div>
+          <label class="label">Sıralama</label>
+          <select id="fsort" class="field">
+            <option value="updated_at">Son güncelleme</option>
+            <option value="rating">Puan</option>
+            <option value="user_ratings_total">Yorum sayısı</option>
+            <option value="name">İsim</option>
+          </select>
+        </div>
+        <div class="flex items-end gap-2">
+          <button type="submit" class="flex-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 font-semibold text-xs py-2.5 rounded-xl transition">Uygula</button>
+          <button type="button" id="resetFilters" class="px-3 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 text-xs py-2.5 rounded-xl transition" title="Sıfırla">
+            <i class="fa-solid fa-rotate-left"></i>
+          </button>
+        </div>
+
+        <div class="col-span-2 md:col-span-3 lg:col-span-8 flex items-center gap-5 flex-wrap pt-1">
+          <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+            <input type="checkbox" id="geoModeToggle" class="accent-emerald-500 w-4 h-4">
+            Yalnızca yukarıdaki koordinatın çevresini göster ($near / 2dsphere)
+          </label>
+        </div>
+      </form>
+    </section>
+
+    <!-- ── Results ─────────────────────────────────────────────────────────── -->
+    <div class="flex items-center justify-between px-1 text-sm text-slate-400 flex-wrap gap-2">
+      <div>Listelenen mekanlar: <span id="venueCount" class="font-bold text-white">0</span> <span id="totalCount" class="text-slate-500"></span></div>
+      <div id="loadingIndicator" class="hidden items-center gap-2 text-amber-400 text-xs font-semibold">
+        <i class="fa-solid fa-circle-notch fa-spin"></i> <span id="loadingText">Yükleniyor...</span>
+      </div>
+    </div>
+
+    <section id="resultsGrid" class="grid grid-cols-1 lg:grid-cols-2 gap-6"></section>
+
+    <nav id="pagination" class="flex items-center justify-center gap-2 pt-2"></nav>
+  </main>
+
+  <footer class="border-t border-slate-800/80 py-5 text-center text-xs text-slate-500">
+    PlaceFind SaaS · MongoDB 2dsphere · Redis/BullMQ · Playwright · Sharp WebP —
+    <a href="/api/v1" target="_blank" class="text-slate-400 hover:text-amber-400 underline">API referansı</a>
+  </footer>
+
+  <!-- ── Export modal ──────────────────────────────────────────────────────── -->
+  <div id="exportModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="glass-panel max-w-4xl w-full rounded-2xl border border-slate-800 shadow-2xl flex flex-col max-h-[85vh]">
+      <div class="p-5 border-b border-slate-800 flex items-center justify-between gap-3">
+        <h3 id="modalTitle" class="text-base font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-code text-amber-400"></i> Veri Çıktısı
+        </h3>
+        <div class="flex items-center gap-2">
+          <button id="copyBtn" class="chip border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 transition"><i class="fa-solid fa-copy"></i> Kopyala</button>
+          <a id="downloadBtn" download class="chip border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 transition"><i class="fa-solid fa-download"></i> İndir</a>
+          <button id="closeModalBtn" class="text-slate-400 hover:text-white text-lg px-2"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+      </div>
+      <div class="p-5 overflow-auto flex-1 font-mono text-xs text-slate-300 bg-slate-900/90 rounded-b-2xl">
+        <pre id="modalCode" class="whitespace-pre-wrap break-all"></pre>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function () {
+  'use strict';
+
+  const $ = (id) => document.getElementById(id);
+  const grid = $('resultsGrid');
+  const loading = $('loadingIndicator');
+  let currentPage = 1;
+  let pollTimer = null;
+
+  const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  const bytes = (n) => {
+    if (!n) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.min(Math.floor(Math.log(n) / Math.log(1024)), units.length - 1);
+    return `${(n / Math.pow(1024, i)).toFixed(i ? 1 : 0)} ${units[i]}`;
+  };
+
+  function setLoading(on, text) {
+    loading.classList.toggle('hidden', !on);
+    loading.classList.toggle('flex', on);
+    if (text) $('loadingText').textContent = text;
+  }
+
+  function feedback(message, tone, boxId) {
+    const box = $(boxId || 'scanFeedback');
+    const tones = {
+      ok: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',
+      warn: 'border-amber-500/30 bg-amber-500/10 text-amber-300',
+      err: 'border-rose-500/30 bg-rose-500/10 text-rose-300',
+    };
+    box.className = `mt-4 rounded-xl border px-4 py-3 text-xs ${tones[tone] || tones.ok}`;
+    box.innerHTML = message;
+  }
+
+  // ── System status & stats ───────────────────────────────────────────────
+  async function loadStatus() {
+    try {
+      const health = await (await fetch('/health')).json();
+      const dot = (ok) => `<span class="w-2 h-2 rounded-full ${ok ? 'bg-emerald-400 animate-pulse' : 'bg-rose-500'}"></span>`;
+      const providers = health.providers || { active: '—', available: [] };
+      const ready = (providers.available || []).filter((p) => p.configured).map((p) => p.provider);
+      $('systemStatus').innerHTML = `
+        <span class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-800">
+          ${dot(health.mongo_state === 'connected')} <span class="text-slate-300">MongoDB</span></span>
+        <span class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-800">
+          ${dot(health.redis_state === 'connected')} <span class="text-slate-300">Redis</span></span>
+        <span class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-800"
+              title="Hazır sağlayıcılar: ${esc(ready.join(', ') || 'yok')}">
+          ${dot(ready.includes(providers.active))} <span class="text-slate-300">${esc(providers.active)}</span></span>`;
+    } catch (_) {
+      $('systemStatus').innerHTML = '<span class="text-rose-400">Sunucuya ulaşılamıyor</span>';
+    }
+  }
+
+  const statCard = (icon, color, label, value, sub) => `
+    <div class="glass-panel rounded-xl p-4 border border-slate-800">
+      <div class="flex items-center gap-2 text-${color}-400 text-xs font-semibold mb-1.5">
+        <i class="fa-solid ${icon}"></i> ${esc(label)}
+      </div>
+      <div class="text-2xl font-extrabold text-white leading-none">${esc(value)}</div>
+      ${sub ? `<div class="text-[0.65rem] text-slate-500 mt-1.5">${esc(sub)}</div>` : ''}
+    </div>`;
+
+  async function loadStats() {
+    try {
+      const { summary, image_pipeline: img, queue } = await (await fetch('/api/v1/venues/stats')).json();
+      $('statsStrip').innerHTML = [
+        statCard('fa-store', 'amber', 'Toplam Mekan', summary.total_venues, `Ortalama puan ${summary.avg_rating ?? '—'}`),
+        statCard('fa-qrcode', 'emerald', 'QR Menü', summary.with_qr_menu, `%${summary.qr_menu_penetration_percent} penetrasyon`),
+        statCard('fa-globe', 'sky', 'Web Sitesi', summary.with_website, `${summary.with_online_ordering} online sipariş`),
+        statCard('fa-envelope', 'purple', 'E-posta', summary.with_email, 'iletişim kaydı'),
+        statCard('fa-image', 'rose', 'WebP Görsel', img.file_count, `${bytes(img.total_bytes)} depolama`),
+        statCard('fa-list-check', 'indigo', 'Kuyruk',
+          queue.available ? `${queue.waiting + queue.active}` : '—',
+          queue.available ? `${queue.completed} tamamlandı · ${queue.failed} hata` : 'Redis kapalı'),
+      ].join('');
+    } catch (_) { /* stats are best-effort */ }
+  }
+
+  // ── Filters ─────────────────────────────────────────────────────────────
+  function filterParams() {
+    const params = new URLSearchParams();
+    const add = (key, value) => { if (value !== '' && value != null) params.set(key, value); };
+    add('q', $('fq').value.trim());
+    add('city', $('fcity').value.trim());
+    add('district', $('fdistrict').value.trim());
+    add('has_qr_menu', $('fqr').value);
+    add('has_email', $('femail').value);
+    add('status', $('fstatus').value);
+    add('source', $('fsource').value);
+    add('sort', $('fsort').value);
+    return params;
+  }
+
+  // ── Venue rendering ─────────────────────────────────────────────────────
+  function venueCard(venue) {
+    const presence = venue.digital_presence || {};
+    const contacts = venue.contacts || {};
+    const menu = venue.menu || {};
+    const categories = menu.categories || [];
+    const itemCount = categories.reduce((sum, c) => sum + (c.items || []).length, 0);
+    const social = contacts.social_media || {};
+
+    const badge = (on, onText, offText, onColor) => on
+      ? `<span class="chip border-${onColor}-500/30 bg-${onColor}-500/10 text-${onColor}-300">${onText}</span>`
+      : `<span class="chip border-slate-700 bg-slate-800/60 text-slate-500">${offText}</span>`;
+
+    // Venue photos first, then menu-item images - both come from the WebP pipeline.
+    const images = [
+      ...(venue.photos || [])
+        .filter((p) => p.webp_image_url)
+        .map((p) => ({ url: p.webp_image_url, label: venue.name })),
+      ...categories.flatMap((c) => c.items || [])
+        .filter((i) => i.webp_image_url)
+        .map((i) => ({ url: i.webp_image_url, label: i.name })),
+    ].slice(0, 4);
+
+    const thumbs = images
+      .map((img) => `<img src="${esc(img.url)}" alt="${esc(img.label)}" title="${esc(img.label)}"
+            class="w-14 h-14 rounded-lg object-cover border border-slate-800" loading="lazy">`)
+      .join('');
+
+    const socialLinks = Object.entries(social).filter(([, url]) => url)
+      .map(([platform, url]) => `<a href="${esc(url)}" target="_blank" rel="noopener"
+            class="text-slate-400 hover:text-amber-400 transition" title="${esc(platform)}">
+            <i class="fa-brands fa-${esc(platform)}"></i></a>`).join('');
+
+    const distance = venue.distance_meters != null
+      ? `<span class="chip border-emerald-500/30 bg-emerald-500/10 text-emerald-300">${venue.distance_meters} m</span>` : '';
+
+    const statusTone = { completed: 'emerald', failed: 'rose', captcha_blocked: 'rose',
+      processing: 'amber', queued: 'sky', pending: 'slate' }[
+      (venue.enrichment || {}).status || 'pending'] || 'slate';
+
+    return `
+    <article class="glass-panel rounded-2xl border border-slate-800 overflow-hidden flex flex-col">
+      <div class="p-5 border-b border-slate-800/70">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <h3 class="text-base font-bold text-white truncate">${esc(venue.name)}</h3>
+            <p class="text-xs text-slate-400 mt-0.5 truncate">${esc((venue.address || {}).formatted || '')}</p>
+            <div class="flex items-center gap-2 mt-2 flex-wrap">
+              ${venue.rating ? `<span class="chip border-amber-500/30 bg-amber-500/10 text-amber-300">
+                <i class="fa-solid fa-star"></i> ${esc(venue.rating)} (${esc(venue.user_ratings_total || 0)})</span>` : ''}
+              <span class="chip border-slate-700 bg-slate-800/60 text-slate-400">${esc(venue.primary_type || '')}</span>
+              ${distance}
+              <span class="chip border-${statusTone}-500/30 bg-${statusTone}-500/10 text-${statusTone}-300">
+                ${esc((venue.enrichment || {}).status || 'pending')}</span>
+              ${venue.data_source === 'mock' ? '<span class="chip border-rose-500/30 bg-rose-500/10 text-rose-300">örnek veri</span>' : ''}
+              ${venue.provider ? `<span class="chip border-indigo-500/30 bg-indigo-500/10 text-indigo-300">${esc(venue.provider)}</span>` : ''}
+            </div>
+          </div>
+          <div class="flex flex-col items-end gap-2 shrink-0">
+            <div class="flex gap-2 text-sm">${socialLinks}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-5 space-y-3 text-xs flex-1">
+        <div class="flex flex-wrap gap-2">
+          ${badge(presence.has_website, 'Web sitesi', 'Web yok', 'sky')}
+          ${badge(presence.has_qr_menu, `QR: ${esc(presence.qr_menu_provider || 'var')}`, 'QR menü yok', 'emerald')}
+          ${badge(presence.supports_online_ordering, 'Online sipariş', 'Sipariş yok', 'purple')}
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 text-slate-400">
+          <div><span class="text-slate-500">Telefon:</span><br>
+            ${(contacts.phone_numbers || []).length ? esc(contacts.phone_numbers.join(', ')) : '<span class="text-slate-600">—</span>'}</div>
+          <div><span class="text-slate-500">E-posta:</span><br>
+            ${(contacts.emails || []).length ? esc(contacts.emails.slice(0, 2).join(', ')) : '<span class="text-slate-600">—</span>'}</div>
+        </div>
+
+        ${(venue.categories || []).length ? `<div><span class="text-slate-500">Kategori:</span>
+          ${esc(venue.categories.slice(0, 4).join(', '))}</div>` : ''}
+        ${(venue.opening_hours || {}).weekday_text?.length ? `<details class="text-slate-400">
+          <summary class="cursor-pointer text-slate-500 hover:text-slate-300">Çalışma saatleri</summary>
+          <div class="mt-1.5 space-y-0.5 pl-1">${venue.opening_hours.weekday_text
+            .map((d) => `<div>${esc(d)}</div>`).join('')}</div></details>` : ''}
+        ${(venue.payment_methods || []).length ? `<div><span class="text-slate-500">Ödeme:</span>
+          ${esc(venue.payment_methods.join(', '))}</div>` : ''}
+        ${(venue.languages || []).length ? `<div><span class="text-slate-500">Diller:</span>
+          ${esc(venue.languages.join(', ').toUpperCase())}</div>` : ''}
+        ${venue.plus_code ? `<div><span class="text-slate-500">Plus code:</span> ${esc(venue.plus_code)}</div>` : ''}
+
+        ${contacts.website_url ? `<div><span class="text-slate-500">Site:</span>
+          <a href="${esc(contacts.website_url)}" target="_blank" rel="noopener"
+             class="text-sky-400 hover:underline break-all">${esc(contacts.website_url)}</a></div>` : ''}
+        ${presence.qr_menu_url ? `<div><span class="text-slate-500">QR menü:</span>
+          <a href="${esc(presence.qr_menu_url)}" target="_blank" rel="noopener"
+             class="text-emerald-400 hover:underline break-all">${esc(presence.qr_menu_url)}</a></div>` : ''}
+
+        <div class="pt-1">
+          <div class="flex items-center justify-between text-slate-400 mb-2">
+            <span><i class="fa-solid fa-book-open text-amber-400"></i>
+              ${categories.length} kategori · ${itemCount} ürün
+              ${(venue.photos || []).length ? ` · ${venue.photos.length} foto` : ''}</span>
+            <span class="text-[0.65rem] text-slate-600">${esc(menu.extraction_method || 'none')}${
+              menu.pages_crawled > 1 ? ` · ${menu.pages_crawled} sayfa` : ''}</span>
+          </div>
+          ${thumbs ? `<div class="flex gap-2">${thumbs}</div>` : '<div class="text-slate-600">Görsel yok</div>'}
+        </div>
+      </div>
+
+      <div class="px-5 py-3 border-t border-slate-800/70 flex items-center gap-2 flex-wrap bg-slate-900/40">
+        <span class="text-[0.65rem] text-slate-500 mr-auto">Dışa aktar:</span>
+        <button class="exportBtn chip border-sky-500/30 bg-sky-500/10 text-sky-300 hover:bg-sky-500/20 transition"
+                data-id="${esc(venue._id)}" data-format="json">JSON</button>
+        <button class="exportBtn chip border-purple-500/30 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 transition"
+                data-id="${esc(venue._id)}" data-format="xml">XML</button>
+        <button class="exportBtn chip border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 transition"
+                data-id="${esc(venue._id)}" data-format="csv">CSV</button>
+        <button class="refreshBtn chip border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 transition"
+                data-id="${esc(venue._id)}" title="Pipeline'ı yeniden çalıştır"><i class="fa-solid fa-rotate"></i></button>
+      </div>
+    </article>`;
+  }
+
+  function renderPagination(pagination) {
+    const nav = $('pagination');
+    if (!pagination || pagination.pages <= 1) { nav.innerHTML = ''; return; }
+
+    const button = (page, label, active) => `
+      <button class="pageBtn px-3 py-1.5 rounded-lg text-xs font-semibold border transition
+        ${active ? 'bg-amber-500 text-slate-950 border-amber-500'
+                 : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800'}"
+        data-page="${page}">${label}</button>`;
+
+    const parts = [];
+    if (pagination.page > 1) parts.push(button(pagination.page - 1, '‹'));
+    for (let p = Math.max(1, pagination.page - 2); p <= Math.min(pagination.pages, pagination.page + 2); p++) {
+      parts.push(button(p, String(p), p === pagination.page));
+    }
+    if (pagination.page < pagination.pages) parts.push(button(pagination.page + 1, '›'));
+    nav.innerHTML = parts.join('');
+  }
+
+  // ── Data loading ────────────────────────────────────────────────────────
+  async function loadVenues(page) {
+    currentPage = page || 1;
+    setLoading(true, 'Mekanlar yükleniyor...');
+
+    try {
+      let url;
+      if ($('geoModeToggle').checked) {
+        const params = filterParams();
+        params.set('lat', $('latInput').value);
+        params.set('lng', $('lngInput').value);
+        params.set('radius', $('radiusInput').value);
+        params.set('limit', '50');
+        url = `/api/v1/venues/nearby?${params}`;
+      } else {
+        const params = filterParams();
+        params.set('page', String(currentPage));
+        params.set('limit', '10');
+        url = `/api/v1/venues?${params}`;
+      }
+
+      const payload = await (await fetch(url)).json();
+      const venues = payload.data || [];
+
+      $('venueCount').textContent = venues.length;
+      $('totalCount').textContent = payload.pagination ? `/ ${payload.pagination.total} kayıt` : '';
+
+      grid.innerHTML = venues.length
+        ? venues.map(venueCard).join('')
+        : `<div class="lg:col-span-2 glass-panel rounded-2xl border border-slate-800 p-12 text-center text-slate-400">
+             <i class="fa-solid fa-magnifying-glass-location text-3xl text-slate-700 mb-3 block"></i>
+             Kayıt bulunamadı. Yukarıdan bir bölge tarayın veya filtreleri sıfırlayın.
+           </div>`;
+
+      renderPagination(payload.pagination);
+    } catch (error) {
+      grid.innerHTML = `<div class="lg:col-span-2 text-rose-400 text-sm p-6">Yükleme hatası: ${esc(error.message)}</div>`;
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // ── Queue polling ───────────────────────────────────────────────────────
+  function pollQueue(jobIds) {
+    clearInterval(pollTimer);
+    let ticks = 0;
+
+    pollTimer = setInterval(async () => {
+      ticks++;
+      try {
+        const { queue } = await (await fetch('/api/v1/venues/stats')).json();
+        const pending = queue.available ? queue.waiting + queue.active : 0;
+
+        if (queue.available) {
+          feedback(`<i class="fa-solid fa-circle-notch fa-spin"></i> Kuyruk işleniyor —
+            ${pending} bekleyen/aktif, ${queue.completed} tamamlandı, ${queue.failed} hata.`, 'warn');
+        }
+
+        if (!queue.available || pending === 0 || ticks > 40) {
+          clearInterval(pollTimer);
+          feedback(`<i class="fa-solid fa-circle-check"></i> ${jobIds.length} mekan için zenginleştirme tamamlandı.`, 'ok');
+          await Promise.all([loadStats(), loadVenues(1)]);
+        } else {
+          loadStats();
+        }
+      } catch (_) {
+        clearInterval(pollTimer);
+      }
+    }, 2000);
+  }
+
+  // ── Events ──────────────────────────────────────────────────────────────
+  $('presetSelect').addEventListener('change', (event) => {
+    const [lat, lng] = event.target.value.split(',');
+    $('latInput').value = lat;
+    $('lngInput').value = lng;
+  });
+
+  $('searchForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const button = $('searchBtn');
+    button.disabled = true;
+    button.classList.add('opacity-60');
+    setLoading(true, 'Google Places taranıyor...');
+
+    try {
+      const response = await fetch('/api/v1/venues/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lat: parseFloat($('latInput').value),
+          lng: parseFloat($('lngInput').value),
+          radius: parseInt($('radiusInput').value, 10),
+          keyword: $('keywordInput').value.trim() || undefined,
+          provider: $('providerSelect').value || undefined,
+          max_results: parseInt($('maxResultsInput').value, 10) || 20,
+          async: $('asyncToggle').checked,
+          force: $('forceToggle').checked,
+          include_photos: $('photosToggle').checked,
+        }),
+      });
+
+      const payload = await response.json();
+      $('scanFeedback').classList.remove('hidden');
+
+      if (!response.ok && response.status !== 202) {
+        const blocked = payload.blocked
+          ? '<br><span class="opacity-80">Google scraper\'ı engelledi. OUTSCRAPER_API_KEY / APIFY_API_KEY tanımlayın veya bir residential proxy kullanın.</span>'
+          : '';
+        feedback(`<i class="fa-solid fa-ban"></i> ${esc(payload.message || 'Tarama başarısız')}${blocked}`, 'err');
+        return;
+      }
+
+      const warnings = (payload.warnings || []).map(esc).join(' · ');
+
+      if (payload.mode === 'queued') {
+        feedback(`<i class="fa-solid fa-circle-notch fa-spin"></i> ${payload.queued} mekan kuyruğa alındı
+          (sağlayıcı: ${esc(payload.provider || payload.data_source)}).${warnings ? `<br><span class="opacity-80">${warnings}</span>` : ''}`, 'warn');
+        pollQueue(payload.job_ids || []);
+      } else {
+        feedback(`<i class="fa-solid fa-circle-check"></i> ${payload.count} mekan işlendi
+          (sağlayıcı: ${esc(payload.provider || payload.data_source)}).${warnings ? `<br><span class="opacity-80">${warnings}</span>` : ''}`,
+          warnings ? 'warn' : 'ok');
+        await Promise.all([loadStats(), loadVenues(1)]);
+      }
+    } catch (error) {
+      $('scanFeedback').classList.remove('hidden');
+      feedback(`<i class="fa-solid fa-triangle-exclamation"></i> ${esc(error.message)}`, 'err');
+    } finally {
+      button.disabled = false;
+      button.classList.remove('opacity-60');
+      setLoading(false);
+    }
+  });
+
+  $('ingestForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const urls = $('ingestUrls').value.split(/[\s,]+/).map((url) => url.trim()).filter(Boolean);
+    $('ingestFeedback').classList.remove('hidden');
+
+    if (!urls.length) {
+      feedback('<i class="fa-solid fa-triangle-exclamation"></i> En az bir adres girin.', 'err', 'ingestFeedback');
+      return;
+    }
+
+    const name = $('ingestName').value.trim();
+    const button = $('ingestBtn');
+    button.disabled = true;
+    button.classList.add('opacity-60');
+    setLoading(true, `${urls.length} adres taranıyor...`);
+
+    try {
+      const response = await fetch('/api/v1/venues/ingest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          urls,
+          name: urls.length === 1 && name ? name : undefined,
+          max_pages: parseInt($('ingestMaxPages').value, 10) || undefined,
+          force: $('ingestForce').checked,
+          include_photos: $('ingestPhotos').checked,
+          async: !$('ingestSync').checked,
+        }),
+      });
+
+      const payload = await response.json();
+
+      if (!response.ok && response.status !== 202) {
+        feedback(`<i class="fa-solid fa-ban"></i> ${esc(payload.message || 'Alma başarısız')}`, 'err', 'ingestFeedback');
+        return;
+      }
+
+      if (payload.mode === 'queued') {
+        feedback(`<i class="fa-solid fa-circle-notch fa-spin"></i> ${payload.count} adres kuyruğa alındı.
+          Worker siteyi denetleyip menü bölümlerini geziyor.`, 'warn', 'ingestFeedback');
+        pollQueue((payload.jobs || []).map((job) => job.job_id));
+      } else {
+        const reports = (payload.reports || [])
+          .map((report) => `${esc(report.name)} — ${report.extraction_method}, ${report.pages_crawled ?? 1} sayfa`)
+          .join('<br>');
+        feedback(`<i class="fa-solid fa-circle-check"></i> ${payload.count} mekan işlendi.
+          ${reports ? `<br><span class="opacity-80">${reports}</span>` : ''}`, 'ok', 'ingestFeedback');
+        await Promise.all([loadStats(), loadVenues(1)]);
+      }
+    } catch (error) {
+      feedback(`<i class="fa-solid fa-triangle-exclamation"></i> ${esc(error.message)}`, 'err', 'ingestFeedback');
+    } finally {
+      button.disabled = false;
+      button.classList.remove('opacity-60');
+      setLoading(false);
+    }
+  });
+
+  $('filterForm').addEventListener('submit', (event) => { event.preventDefault(); loadVenues(1); });
+
+  $('resetFilters').addEventListener('click', () => {
+    ['fq', 'fcity', 'fdistrict'].forEach((id) => { $(id).value = ''; });
+    ['fqr', 'femail', 'fstatus', 'fsource'].forEach((id) => { $(id).value = ''; });
+    $('fsort').value = 'updated_at';
+    $('geoModeToggle').checked = false;
+    loadVenues(1);
+  });
+
+  $('geoModeToggle').addEventListener('change', () => loadVenues(1));
+
+  $('pagination').addEventListener('click', (event) => {
+    const button = event.target.closest('.pageBtn');
+    if (button) loadVenues(parseInt(button.dataset.page, 10));
+  });
+
+  document.querySelectorAll('.bulkExport').forEach((button) => {
+    button.addEventListener('click', () => {
+      const params = filterParams();
+      params.set('format', button.dataset.bulk);
+      params.set('limit', '1000');
+      window.open(`/api/v1/venues/export?${params}`, '_blank');
+    });
+  });
+
+  grid.addEventListener('click', async (event) => {
+    const exportBtn = event.target.closest('.exportBtn');
+    if (exportBtn) {
+      const { id, format } = exportBtn.dataset;
+      try {
+        const response = await fetch(`/api/v1/venues/${id}/export?format=${format}`);
+        const text = await response.text();
+        $('modalTitle').innerHTML = `<i class="fa-solid fa-code text-amber-400"></i> ${format.toUpperCase()} Çıktısı`;
+        $('modalCode').textContent = text;
+
+        const mime = { json: 'application/json', xml: 'application/xml', csv: 'text/csv' }[format];
+        const link = $('downloadBtn');
+        if (link.href.startsWith('blob:')) URL.revokeObjectURL(link.href);
+        link.href = URL.createObjectURL(new Blob([text], { type: `${mime};charset=utf-8` }));
+        link.download = `venue_${id}.${format}`;
+
+        $('exportModal').classList.remove('hidden');
+        $('exportModal').classList.add('flex');
+      } catch (error) {
+        alert(`Dışa aktarma hatası: ${error.message}`);
+      }
+      return;
+    }
+
+    const refreshBtn = event.target.closest('.refreshBtn');
+    if (refreshBtn) {
+      const icon = refreshBtn.querySelector('i');
+      icon.classList.add('fa-spin');
+      try {
+        await fetch(`/api/v1/venues/${refreshBtn.dataset.id}/refresh`, { method: 'POST' });
+        $('scanFeedback').classList.remove('hidden');
+        feedback('<i class="fa-solid fa-circle-notch fa-spin"></i> Mekan yeniden işleniyor...', 'warn');
+        pollQueue(['refresh']);
+      } catch (error) {
+        alert(`Yenileme hatası: ${error.message}`);
+      } finally {
+        icon.classList.remove('fa-spin');
+      }
+    }
+  });
+
+  $('copyBtn').addEventListener('click', async () => {
+    await navigator.clipboard.writeText($('modalCode').textContent);
+    $('copyBtn').innerHTML = '<i class="fa-solid fa-check"></i> Kopyalandı';
+    setTimeout(() => { $('copyBtn').innerHTML = '<i class="fa-solid fa-copy"></i> Kopyala'; }, 1500);
+  });
+
+  const closeModal = () => {
+    $('exportModal').classList.add('hidden');
+    $('exportModal').classList.remove('flex');
+  };
+  $('closeModalBtn').addEventListener('click', closeModal);
+  $('exportModal').addEventListener('click', (event) => { if (event.target === $('exportModal')) closeModal(); });
+  document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeModal(); });
+
+  // ── Boot ────────────────────────────────────────────────────────────────
+  loadStatus();
+  loadStats();
+  loadVenues(1);
+  setInterval(loadStatus, 30000);
+})();
+</script>
+</body>
+</html>
