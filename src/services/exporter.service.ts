@@ -109,6 +109,10 @@ export class ExporterService {
     return this.manyToJSON([venue]);
   }
 
+  public static toSingleJSON(venue: IVenueDocument): string {
+    return JSON.stringify(this.venueToObject(venue), null, 2);
+  }
+
   public static manyToJSON(venues: IVenueDocument[]): string {
     return JSON.stringify(
       {
