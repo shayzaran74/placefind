@@ -25,60 +25,61 @@ export class ExporterService {
 
   /** §3.1 document shape, with lat/lng echoed for convenience. */
   public static venueToObject(venue: IVenueDocument): Record<string, any> {
+    const plainVenue = (venue as any).toObject ? (venue as any).toObject({ getters: true, virtuals: true }) : venue;
     return {
-      id: String(venue._id),
-      google_place_id: venue.google_place_id,
-      name: venue.name,
-      primary_type: venue.primary_type,
-      rating: venue.rating,
-      user_ratings_total: venue.user_ratings_total,
-      price_level: venue.price_level,
+      id: String(plainVenue._id || venue._id),
+      google_place_id: plainVenue.google_place_id,
+      name: plainVenue.name,
+      primary_type: plainVenue.primary_type,
+      rating: plainVenue.rating,
+      user_ratings_total: plainVenue.user_ratings_total,
+      price_level: plainVenue.price_level,
       // Venues ingested from a URL may have no coordinates; the key stays
       // present but null so consumers can tell "unknown" from "0, 0".
       location:
-        venue.location?.coordinates && venue.location.coordinates.length === 2
+        plainVenue.location?.coordinates && plainVenue.location.coordinates.length === 2
           ? {
               type: 'Point',
-              coordinates: venue.location.coordinates,
-              latitude: venue.location.coordinates[1],
-              longitude: venue.location.coordinates[0],
+              coordinates: plainVenue.location.coordinates,
+              latitude: plainVenue.location.coordinates[1],
+              longitude: plainVenue.location.coordinates[0],
             }
           : null,
       address: {
-        formatted: venue.address?.formatted,
-        country: venue.address?.country,
-        city: venue.address?.city,
-        district: venue.address?.district,
-        neighborhood: venue.address?.neighborhood,
-        postal_code: venue.address?.postal_code,
+        formatted: plainVenue.address?.formatted,
+        country: plainVenue.address?.country,
+        city: plainVenue.address?.city,
+        district: plainVenue.address?.district,
+        neighborhood: plainVenue.address?.neighborhood,
+        postal_code: plainVenue.address?.postal_code,
       },
       contacts: {
-        phone_numbers: venue.contacts?.phone_numbers || [],
-        emails: venue.contacts?.emails || [],
-        website_url: venue.contacts?.website_url,
-        social_media: venue.contacts?.social_media || {},
+        phone_numbers: plainVenue.contacts?.phone_numbers || [],
+        emails: plainVenue.contacts?.emails || [],
+        website_url: plainVenue.contacts?.website_url,
+        social_media: plainVenue.contacts?.social_media || {},
       },
       digital_presence: {
-        has_website: venue.digital_presence?.has_website ?? false,
-        has_qr_menu: venue.digital_presence?.has_qr_menu ?? false,
-        qr_menu_provider: venue.digital_presence?.qr_menu_provider,
-        qr_menu_url: venue.digital_presence?.qr_menu_url,
-        supports_online_ordering: venue.digital_presence?.supports_online_ordering ?? false,
-        ordering_channels: venue.digital_presence?.ordering_channels || [],
+        has_website: plainVenue.digital_presence?.has_website ?? false,
+        has_qr_menu: plainVenue.digital_presence?.has_qr_menu ?? false,
+        qr_menu_provider: plainVenue.digital_presence?.qr_menu_provider,
+        qr_menu_url: plainVenue.digital_presence?.qr_menu_url,
+        supports_online_ordering: plainVenue.digital_presence?.supports_online_ordering ?? false,
+        ordering_channels: plainVenue.digital_presence?.ordering_channels || [],
       },
-      photos: (venue.photos || []).map((photo) => ({
+      photos: (plainVenue.photos || []).map((photo: any) => ({
         ...photo,
         webp_image_url: this.formatUrl(photo.webp_image_url),
       })),
       menu: {
-        currency: venue.menu?.currency || 'TRY',
-        updated_at: venue.menu?.updated_at,
-        source_url: venue.menu?.source_url,
-        extraction_method: venue.menu?.extraction_method,
-        categories: (venue.menu?.categories || []).map((category) => ({
+        currency: plainVenue.menu?.currency || 'TRY',
+        updated_at: plainVenue.menu?.updated_at,
+        source_url: plainVenue.menu?.source_url,
+        extraction_method: plainVenue.menu?.extraction_method,
+        categories: (plainVenue.menu?.categories || []).map((category: any) => ({
           category_id: category.category_id,
           name: category.name,
-          items: (category.items || []).map((item) => ({
+          items: (category.items || []).map((item: any) => ({
             item_id: item.item_id,
             name: item.name,
             description: item.description,
@@ -93,14 +94,14 @@ export class ExporterService {
         })),
       },
       // Optional enrichment beyond the specification schema.
-      categories: venue.categories,
-      opening_hours: venue.opening_hours,
-      plus_code: venue.plus_code,
-      source_ids: venue.source_ids,
-      data_source: venue.data_source,
-      provider: venue.provider,
-      created_at: venue.created_at,
-      updated_at: venue.updated_at,
+      categories: plainVenue.categories,
+      opening_hours: plainVenue.opening_hours,
+      plus_code: plainVenue.plus_code,
+      source_ids: plainVenue.source_ids,
+      data_source: plainVenue.data_source,
+      provider: plainVenue.provider,
+      created_at: plainVenue.created_at,
+      updated_at: plainVenue.updated_at,
     };
   }
 
