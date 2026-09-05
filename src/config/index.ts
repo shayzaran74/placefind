@@ -72,6 +72,10 @@ export const config = {
   /** Same-origin pacing; the multi-second Maps delay is not needed here. */
   menuCrawlDelayMs: int(process.env.MENU_CRAWL_DELAY_MS, 400),
   menuCrawlRespectRobots: bool(process.env.MENU_CRAWL_RESPECT_ROBOTS, true),
+  menuCrawlBypassRobotsDomains: (process.env.MENU_CRAWL_BYPASS_ROBOTS_DOMAINS || 'akinsoft.com.tr,qrmenuapp.akinsoft.com.tr')
+    .split(',')
+    .map((d) => d.trim().toLowerCase())
+    .filter(Boolean),
 
   /** Scraper workers (spec §2 - Playwright) */
   scraperConcurrency: int(process.env.SCRAPER_CONCURRENCY, 2),

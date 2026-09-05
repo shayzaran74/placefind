@@ -381,7 +381,17 @@ export class SiteProfileService {
 
     add($('meta[property="og:image"]').attr('content'));
 
-    return images.slice(0, 5);
+    // Category and banner photos from QR menus (e.g. Akınsoft category-photo)
+    $('[class*="category-photo"], [class*="restaurant-top-image"], [class*="category"] img').each((_, el) => {
+      const $el = $(el);
+      const dataSrc = $el.attr('data-src') || $el.attr('data-original') || $el.attr('src');
+      if (dataSrc) add(dataSrc);
+      const style = $el.attr('style') || '';
+      const bgMatch = style.match(/url\((['"]?)([^'")]+)\1\)/i);
+      if (bgMatch) add(bgMatch[2]);
+    });
+
+    return images.slice(0, 10);
   }
 
   /**

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import https from 'https';
 import { config } from '../config';
 
 export interface IRenderResult {
@@ -24,6 +25,33 @@ const USER_AGENT =
 export class RenderService {
   private static browserPromise: Promise<any> | null = null;
   private static playwrightUnavailable = false;
+
+  /**
+   * Hosts whose last Playwright render threw, and when we learned it.
+   *
+   * A crawl fetches every page of one menu from one host, so without this the
+   * whole crawl pays the same navigation timeout page after page before
+   * falling back. The verdict expires because a stall is usually the site
+   * having a bad minute, not a permanent property of the host.
+   */
+  private static staticOnlyHosts = new Map<string, number>();
+  private static readonly STATIC_ONLY_TTL_MS = 10 * 60_000;
+
+  private static hostOf(url: string): string {
+    try {
+      return new URL(url).host;
+    } catch {
+      return '';
+    }
+  }
+
+  private static isStaticOnly(host: string): boolean {
+    const since = this.staticOnlyHosts.get(host);
+    if (since === undefined) return false;
+    if (Date.now() - since < this.STATIC_ONLY_TTL_MS) return true;
+    this.staticOnlyHosts.delete(host);
+    return false;
+  }
 
   private static async getBrowser(): Promise<any | null> {
     if (!config.playwrightEnabled || this.playwrightUnavailable) return null;
@@ -58,21 +86,41 @@ export class RenderService {
   }
 
   public static async render(url: string): Promise<IRenderResult> {
-    const browser = await this.getBrowser();
+    const host = this.hostOf(url);
+    const browser = this.isStaticOnly(host) ? null : await this.getBrowser();
 
     if (browser) {
       let context: any;
       try {
         context = await browser.newContext({ userAgent: USER_AGENT, locale: 'tr-TR' });
         const page = await context.newPage();
+        // 'commit' returns as soon as the response lands. Waiting for
+        // DOMContentLoaded *inside* goto makes the render hostage to a single
+        // stalled subresource: one blocking script that never returns throws
+        // the whole navigation away after the full timeout, even though the
+        // document itself arrived in milliseconds. The waits below reach the
+        // same milestones but best-effort, so a stall costs us the markup JS
+        // would have added rather than the page.
         const response = await page.goto(url, {
-          waitUntil: 'domcontentloaded',
+          waitUntil: 'commit',
           timeout: config.scraperTimeoutMs,
         });
-        // Give client-side menu rendering a chance to settle.
-        await page
-          .waitForLoadState('networkidle', { timeout: Math.min(config.scraperTimeoutMs, 8000) })
-          .catch(() => undefined);
+        const domReady = await page
+          .waitForLoadState('domcontentloaded', {
+            timeout: Math.min(config.scraperTimeoutMs, 10000),
+          })
+          .then(() => true)
+          .catch(() => false);
+
+        // Give client-side menu rendering a chance to settle. Skipped when the
+        // document never finished parsing: networkidle is a strictly later
+        // milestone, so waiting for it would only spend a second budget on the
+        // same stalled request.
+        if (domReady) {
+          await page
+            .waitForLoadState('networkidle', { timeout: Math.min(config.scraperTimeoutMs, 8000) })
+            .catch(() => undefined);
+        }
 
         // Playwright sayfa kaydırma ve lazy load yükletme
         await page
@@ -97,6 +145,8 @@ export class RenderService {
         return { html, url: page.url(), method: 'playwright', status: response?.status() };
       } catch (error: any) {
         console.warn(`[RenderService] Playwright render failed for ${url}: ${error.message}`);
+        // Spare the rest of this crawl the same timeout (see staticOnlyHosts).
+        if (host) this.staticOnlyHosts.set(host, Date.now());
       } finally {
         await context?.close().catch(() => undefined);
       }
@@ -105,7 +155,12 @@ export class RenderService {
     const response = await axios.get(url, {
       timeout: config.scraperTimeoutMs,
       maxRedirects: 5,
-      headers: { 'User-Agent': USER_AGENT, 'Accept-Language': 'tr-TR,tr;q=0.9,en;q=0.8' },
+      headers: {
+        'User-Agent': USER_AGENT,
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
+      },
+      httpsAgent: new https.Agent({ rejectUnauthorized: false }),
       responseType: 'text',
       transformResponse: [(data) => data],
       validateStatus: (status) => status < 500,

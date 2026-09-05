@@ -3,6 +3,7 @@ import * as cheerio from 'cheerio';
 import { IMenuCategory, IMenuItem } from '../models/Venue';
 import { ImageService } from './image.service';
 import { MenuCrawlerService } from './menuCrawler.service';
+import { InstagramMatcherService } from './instagramMatcher.service';
 import { config } from '../config';
 
 export interface IScrapeResult {
@@ -25,6 +26,8 @@ export interface IScrapeOptions {
   crawl?: boolean;
   /** Hard cap on fetched pages, entry page included. */
   maxPages?: number;
+  /** Instagram profile URL to match post photos when menu items lack images. */
+  instagramUrl?: string;
 }
 
 interface IRawItem {
@@ -552,6 +555,374 @@ export class ScraperService {
     return categories.filter((c) => c.items.length > 0);
   }
 
+  /** Pass 2b: Akınsoft QR Menu platform specific DOM extractor. */
+  private static extractFromAkinsoft($: cheerio.CheerioAPI, baseUrl: string): IMenuCategory[] {
+    const productContainers = $('.product-container, [class*="product-container"]');
+    if (!productContainers.length) return [];
+
+    const categories: IMenuCategory[] = [];
+    const elements: Array<{ type: 'heading' | 'item'; name: string; node: any }> = [];
+
+    $('*').each((_, el) => {
+      const $el = $(el);
+      const tag = ((el as any).name || (el as any).tagName || '').toLowerCase();
+      if (tag === 'h2' || tag === 'h3' || $el.hasClass('category-title')) {
+        const text = $el.text().replace(/\s+/g, ' ').trim();
+        if (text && text.length > 1 && text.length < 90) {
+          elements.push({ type: 'heading', name: text, node: el });
+        }
+      } else if ($el.hasClass('product-container--name_name')) {
+        const name = $el.text().replace(/\s+/g, ' ').trim();
+        if (name && name.length >= 2) {
+          elements.push({ type: 'item', name, node: el });
+        }
+      }
+    });
+
+    if (!elements.some((e) => e.type === 'item')) return [];
+
+    let currentCategoryName = 'Menü';
+    const claimedItemKeys = new Set<string>();
+
+    for (const entry of elements) {
+      if (entry.type === 'heading') {
+        currentCategoryName = entry.name;
+      } else if (entry.type === 'item') {
+        const $itemNode = $(entry.node);
+        const card = $itemNode.closest('.product-container-header, [class*="product-container-header"], .product-container');
+        if (!card.length) continue;
+
+        const nameEl = card.find('.product-container--name_name, [class*="name_name"]').first();
+        const priceEl = card.find('[class*="price_price"], [class*="price--content"], [class*="price"]').first();
+
+        const name = nameEl.length ? nameEl.text().replace(/\s+/g, ' ').trim() : entry.name;
+        const priceText = priceEl.length ? priceEl.text().replace(/\s+/g, ' ').trim() : '';
+        const price = this.parsePrice(priceText);
+
+        if (!name || price === null) continue;
+
+        const itemKey = `${currentCategoryName}:${name}`.toLowerCase();
+        if (claimedItemKeys.has(itemKey)) continue;
+        claimedItemKeys.add(itemKey);
+
+        const descEl = card.find('[class*="desc"], [class*="aciklama"], p').first();
+        const description = descEl.length ? descEl.text().replace(/\s+/g, ' ').trim() : undefined;
+
+        // 1. Look for img tag
+        const img = card.find('img').first();
+        let rawSrc =
+          img.attr('data-src') ||
+          img.attr('data-original') ||
+          img.attr('data-lazy-src') ||
+          img.attr('src');
+
+        // 2. Look for photo container with data-src or CSS background-image
+        if (!rawSrc) {
+          const photoContainer = card
+            .find('[class*="product-photo"], [class*="photo"], [class*="image"], [class*="img"]')
+            .first();
+          if (photoContainer.length) {
+            rawSrc =
+              photoContainer.attr('data-src') ||
+              photoContainer.attr('data-bg') ||
+              photoContainer.attr('data-original');
+            if (!rawSrc) {
+              const style = photoContainer.attr('style') || '';
+              const bgMatch = style.match(/url\((['"]?)([^'")]+)\1\)/i);
+              if (bgMatch) rawSrc = bgMatch[2];
+            }
+          }
+        }
+
+        // 3. Check CSS background-image on card or its children
+        if (!rawSrc) {
+          card.find('*').addBack().each((_, el) => {
+            const style = $(el).attr('style') || '';
+            const bgMatch = style.match(/url\((['"]?)([^'")]+)\1\)/i);
+            if (bgMatch && !bgMatch[2].includes('cover-photo') && !bgMatch[2].includes('favicon')) {
+              rawSrc = bgMatch[2];
+              return false;
+            }
+          });
+        }
+
+        let image: string | undefined;
+        if (rawSrc && !rawSrc.startsWith('data:')) {
+          try {
+            image = new URL(rawSrc, baseUrl).toString();
+          } catch {
+            image = undefined;
+          }
+        }
+
+        let category = categories.find((c) => c.name === currentCategoryName);
+        if (!category) {
+          category = {
+            category_id: this.slug(currentCategoryName, 'cat'),
+            name: currentCategoryName,
+            items: [],
+          };
+          categories.push(category);
+        }
+
+        category.items.push({
+          item_id: this.slug(`${currentCategoryName}:${name}`, 'item'),
+          name,
+          description: description && description !== name ? description : undefined,
+          price,
+          currency: this.detectCurrency(priceText) || 'TRY',
+          original_image_url: image,
+          is_available: true,
+        });
+      }
+    }
+
+    return categories.filter((c) => c.items.length > 0);
+  }
+
+  /**
+   * Pass 3: catalogue pages that publish no prices at all.
+   *
+   * extractFromDom is anchored on prices - it starts from the currency figures
+   * on the page and climbs to the product that owns each one. A patisserie or
+   * bakery that lists what it sells without printing prices therefore yields
+   * nothing, even though every product sits in the markup with its own photo
+   * and description.
+   *
+   * A catalogue repeats a different structure instead: a grid of links into
+   * one URL directory, each tile carrying the product's own artwork. Grouping
+   * by directory rather than by class name keeps this independent of how the
+   * theme names its containers, and the per-tile image is what separates a
+   * product grid from a navigation list - a footer menu links into a directory
+   * too, but its links carry no artwork.
+   *
+   * `skip` holds the pages the crawler is already fetching in their own right.
+   * Without it a category grid reports its six sections as six products, each
+   * duplicating a section page we scrape anyway.
+   */
+  private static extractCatalog(
+    $: cheerio.CheerioAPI,
+    baseUrl: string,
+    skip: Set<string> = new Set()
+  ): IMenuCategory[] {
+    // Same bound as a priced item block: past this the node is page furniture.
+    const MAX_TILE_CHARS = 1200;
+    // Two links are a pair of buttons; three repeat a template.
+    const MIN_GRID_LINKS = 3;
+    // Labels that name the action rather than the product. The dotted capital
+    // I is spelled out: JS case-insensitivity does not fold "İ" onto "i".
+    const genericLinkRe =
+      /^([iİ]ncele|detay(lar)?|devam|daha fazla|görüntüle|ürünleri gör|urunleri gor|read more|view( more)?|more|details?|see more)$/i;
+
+    interface ILink {
+      url: string;
+      el: any;
+      text: string;
+    }
+
+    // One normalisation pass: the tile search below asks for these repeatedly.
+    const linkUrl = new Map<any, string>();
+    const links: ILink[] = [];
+
+    $('a[href]').each((_, el) => {
+      const $el = $(el);
+      const url = MenuCrawlerService.normalize($el.attr('href') || '', baseUrl);
+      if (!url) return;
+      linkUrl.set(el, url);
+      if (skip.has(url)) return;
+
+      // A link to a directory is a section of the catalogue, not a leaf in it.
+      const path = new URL(url).pathname;
+      if (path.endsWith('/')) return;
+
+      links.push({ url, el, text: $el.text().replace(/\s+/g, ' ').trim() });
+    });
+
+    // --- 1. Group by the directory the links point into ---------------------
+    const byDir = new Map<string, ILink[]>();
+    for (const link of links) {
+      const dir = new URL(link.url).pathname.replace(/[^/]*$/, '');
+      const bucket = byDir.get(dir);
+      if (bucket) bucket.push(link);
+      else byDir.set(dir, [link]);
+    }
+
+    const order = new Map<any, number>();
+    $('*').each((index, el) => {
+      order.set(el, index);
+    });
+
+    /**
+     * Smallest block around a link that carries its own image. Climbing stops
+     * at a block that also holds a *different* product of the same grid - past
+     * that point we are looking at the grid, not at one of its tiles. The
+     * link's twin ("İncele" beside the title) points at the same URL and so
+     * does not end the climb.
+     */
+    const tileFor = (link: ILink, siblings: Set<string>): cheerio.Cheerio<any> | undefined => {
+      let node = $(link.el);
+      if (node.find('img').length) return node;
+
+      for (let up = 0; up < 8; up++) {
+        const parent = node.parent();
+        if (!parent.length) break;
+        if (parent.text().replace(/\s+/g, ' ').trim().length > MAX_TILE_CHARS) break;
+
+        const swallowsSibling = parent
+          .find('a[href]')
+          .toArray()
+          .some((el) => {
+            const url = linkUrl.get(el);
+            return url !== undefined && url !== link.url && siblings.has(url);
+          });
+        if (swallowsSibling) break;
+
+        node = parent;
+        if (node.find('img').length) return node;
+      }
+      return undefined;
+    };
+
+    /** The anchor text that names the product, not the button under it. */
+    const nameFor = (group: ILink[], tile: cheerio.Cheerio<any>): string | undefined => {
+      const usable = (text: string): boolean =>
+        text.length >= 2 && text.length <= 120 && !genericLinkRe.test(text);
+
+      const labelled = group
+        .map((link) => link.text)
+        .filter(usable)
+        .sort((a, b) => b.length - a.length)[0];
+      if (labelled) return labelled;
+
+      // Themes that print only artwork still label the link for screen readers.
+      const titled = group
+        .map((link) => ($(link.el).attr('title') || '').replace(/\s+/g, ' ').trim())
+        .find(usable);
+      if (titled) return titled;
+
+      const heading = tile
+        .find('h1,h2,h3,h4,h5,h6,[class*="title"],[class*="name"],[class*="baslik"]')
+        .toArray()
+        .map((el) => $(el).text().replace(/\s+/g, ' ').trim())
+        .find(usable);
+      if (heading) return heading;
+
+      const alt = (tile.find('img').first().attr('alt') || '').replace(/\s+/g, ' ').trim();
+      return usable(alt) ? alt : undefined;
+    };
+
+    // --- 2. Resolve each grid into products --------------------------------
+    interface IProduct {
+      name: string;
+      tile: cheerio.Cheerio<any>;
+      pos: number;
+    }
+
+    const products: IProduct[] = [];
+    const tiles: cheerio.Cheerio<any>[] = [];
+
+    for (const group of byDir.values()) {
+      const siblings = new Set(group.map((link) => link.url));
+      if (siblings.size < MIN_GRID_LINKS) continue;
+
+      // Every anchor pointing at one product, so the title link and its
+      // "İncele" twin resolve to a single row.
+      const byUrl = new Map<string, ILink[]>();
+      for (const link of group) {
+        const bucket = byUrl.get(link.url);
+        if (bucket) bucket.push(link);
+        else byUrl.set(link.url, [link]);
+      }
+
+      const found: IProduct[] = [];
+      for (const [, entries] of byUrl) {
+        const tile = tileFor(entries[0], siblings);
+        if (!tile) continue;
+        const name = nameFor(entries, tile);
+        if (!name) continue;
+        found.push({ name, tile, pos: order.get(entries[0].el) ?? 0 });
+      }
+
+      // A handful of tiles is a grid; one or two are a teaser or a footer.
+      if (found.length < MIN_GRID_LINKS) continue;
+      products.push(...found);
+      tiles.push(...found.map((product) => product.tile));
+    }
+
+    if (!products.length) return [];
+
+    // --- 3. Category headings = headings outside every tile -----------------
+    const headings: Array<{ pos: number; name: string }> = [];
+    $('h1,h2,h3,h4,h5,h6').each((_, el) => {
+      const text = $(el).text().replace(/\s+/g, ' ').trim();
+      if (!text || text.length > 90) return;
+      if (tiles.some((tile) => tile.is(el) || tile.find(el).length > 0)) return;
+      headings.push({ pos: order.get(el) ?? 0, name: text });
+    });
+    headings.sort((a, b) => a.pos - b.pos);
+
+    const categoryFor = (pos: number): string => {
+      let current = 'Menü';
+      for (const heading of headings) {
+        if (heading.pos > pos) break;
+        current = heading.name;
+      }
+      return current;
+    };
+
+    // --- 4. Assemble --------------------------------------------------------
+    const categories: IMenuCategory[] = [];
+    const claimed = new Set<string>();
+
+    for (const product of products.sort((a, b) => a.pos - b.pos)) {
+      const key = product.name.toLowerCase();
+      if (claimed.has(key)) continue;
+      claimed.add(key);
+
+      const description = product.tile
+        .find('[class*="desc"], [class*="aciklama"], [class*="ozet"], [class*="Ozet"], p')
+        .toArray()
+        .map((el) => $(el).text().replace(/\s+/g, ' ').trim())
+        .find((text) => text && text !== product.name && text.length > 2);
+
+      const img = product.tile.find('img').first();
+      const src =
+        img.attr('data-src') ||
+        img.attr('data-original') ||
+        img.attr('data-lazy-src') ||
+        img.attr('src');
+      let image: string | undefined;
+      if (src && !src.startsWith('data:')) {
+        try {
+          image = new URL(src, baseUrl).toString();
+        } catch {
+          image = undefined;
+        }
+      }
+
+      const categoryName = categoryFor(product.pos).slice(0, 80) || 'Menü';
+      let category = categories.find((c) => c.name === categoryName);
+      if (!category) {
+        category = { category_id: this.slug(categoryName, 'cat'), name: categoryName, items: [] };
+        categories.push(category);
+      }
+
+      category.items.push({
+        item_id: this.slug(`${categoryName}:${product.name}`, 'item'),
+        name: product.name,
+        description,
+        // The site states none. Zero is the honest reading, and the
+        // `catalog` extraction method tells the dashboard why.
+        price: 0,
+        currency: 'TRY',
+        original_image_url: image,
+        is_available: true,
+      });
+    }
+
+    return categories.filter((c) => c.items.length > 0);
+  }
+
   /** Categories whose name carries no information about what is inside them. */
   private static genericCategoryRe = /^(men[uü]|menu|[uü]r[uü]nler|products|items|list[ea]?)$/i;
 
@@ -647,6 +1018,14 @@ export class ScraperService {
 
         const methods = new Set<string>();
 
+        // Pages the crawler already fetches on their own: a category grid must
+        // not also report them as products (see extractCatalog).
+        const crawledUrls = new Set(
+          crawl.pages
+            .map((page) => MenuCrawlerService.normalize(page.url, page.url))
+            .filter((url): url is string => url !== null)
+        );
+
         for (const page of crawl.pages) {
           const $ = cheerio.load(page.html);
 
@@ -654,8 +1033,19 @@ export class ScraperService {
           let pageMethod = pageCategories.length ? 'schema_org' : '';
 
           if (!pageCategories.length) {
+            pageCategories = this.extractFromAkinsoft($, page.url);
+            pageMethod = pageCategories.length ? 'akinsoft_dom' : '';
+          }
+
+          if (!pageCategories.length) {
             pageCategories = this.extractFromDom($, page.url);
             pageMethod = pageCategories.length ? page.method : '';
+          }
+
+          // Last resort: the site publishes products but no prices.
+          if (!pageCategories.length) {
+            pageCategories = this.extractCatalog($, page.url, crawledUrls);
+            pageMethod = pageCategories.length ? 'catalog' : '';
           }
 
           if (!pageCategories.length) continue;
@@ -672,6 +1062,12 @@ export class ScraperService {
             ? 'schema_org'
             : Array.from(methods).find((entry) => entry !== 'schema_org') || 'schema_org'
           : 'none';
+
+        // Price 0 is a real reading here, not a parse failure - say so, so the
+        // dashboard never presents these products as free.
+        if (methods.has('catalog')) {
+          warnings.push('Site publishes no prices; products captured with price 0.');
+        }
 
         if (!categories.length) {
           warnings.push(
@@ -693,6 +1089,20 @@ export class ScraperService {
     if (!categories.length && config.allowMockData && allowSampleMenu) {
       categories.push(...this.getSampleMenu());
       method = 'sample';
+    }
+
+    // --- Instagram Post Photo Matcher ----------------------------------------
+    const instaUrl = options.instagramUrl || (menuUrl && menuUrl.includes('instagram.com') ? menuUrl : undefined);
+    if (instaUrl && categories.length) {
+      try {
+        console.log(`[ScraperService] Attempting Instagram photo matching via ${instaUrl}...`);
+        const instaMatch = await InstagramMatcherService.matchAndEnrichMenu(categories, instaUrl);
+        if (instaMatch.matched_items > 0) {
+          console.log(`[ScraperService] Successfully matched ${instaMatch.matched_items} menu items with Instagram photos!`);
+        }
+      } catch (err: any) {
+        console.warn(`[ScraperService] Instagram matcher failed: ${err.message}`);
+      }
     }
 
     // --- WebP conversion pipeline (spec §2.2) -------------------------------

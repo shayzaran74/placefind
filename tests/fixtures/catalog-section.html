@@ -1,0 +1,959 @@
+
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="tr">
+<head><meta name="robots" content="index" /><meta name="author" content="deve 05057474284" /><link rel="dns-prefetch" href="//fonts.googleapis.com" /><link rel="dns-prefetch" href="//s.w.org" /><link href="https://fonts.gstatic.com" crossorigin="" rel="preconnect" /><link rel="icon" type="image/x-icon" href="/favicon.ico" /><meta name="viewport" content="user-scalable=1,width=device-width,initial-scale=1,maximum-scale=10" /><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@100..700&amp;display=swap" rel="stylesheet" />
+
+    <style>
+        :root { --baslik-fontu: "Poppins", sans-serif; --icerik-fontu: "Poppins", sans-serif; --icerik-fontu1: "Roboto Mono", monospace; --baslik-font-boyutu: 18px; --icerik-font-boyutu: 16px; --baslik-font-weight: 800; --icerik-font-weight: 400; --tema-renk1: #003865; --tema-renk2: #EEECE2; --tema-renk3: #888888; }
+    </style>
+
+    <link href="/d/min.css?v=2" rel="stylesheet" /><link href="/d/xzoom/xzoom.css" rel="stylesheet" /><link href="/d/kritik.css?v=27" rel="stylesheet" /><link href="/d/animate.css" rel="stylesheet" /><link href="/d/aos.css" rel="stylesheet" /><link href="/d/fotorama.css" rel="stylesheet" /><link href="/d/c.css?v=15" rel="stylesheet" />
+    <style>
+        /**********/
+        .sayfaTepe { padding: 100px 0; background-image: none; height: 76vh; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .sayfaTepe:before { background-color: #000000; z-index: 5; }
+        .sayfaTepe .tepe-overlay { }
+        .sayfaTepe .tepe-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; }
+        .sayfaTepe .tepe-bg figure { width: 100%; height: 100%; object-fit: cover; object-position: center; }
+        .sayfaTepe .tepe-bg figure img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
+        .sayfaTepe .tepe-bg video { width: 100%; height: 100%; object-fit: cover; object-position: center; }
+        .sayfaTepe h1 { z-index: 50; color: #fff; }
+        /**********/
+        #productCat { padding: 50px 0; }
+        #productCat .item { display: flex; align-items: center; }
+        #productCat .item:not(:first-child) { margin-top: 108px; }
+
+        #productCat .item:nth-child(2n) { flex-direction: row-reverse; }
+        #productCat .item:nth-child(2n+1) { }
+
+        #productCat .item:nth-child(2n) figure { border-radius: 12px 0 0 12px; }
+        #productCat .item:nth-child(2n+1) figure { border-radius: 0 12px 12px 0; }
+
+        #productCat .item:nth-child(2n) .metin { display: flex; flex-wrap: wrap; justify-content: flex-end; padding-right: 54px; padding-left: 0; text-align: right; }
+        #productCat .item:nth-child(2n+1) .metin { }
+        #productCat .item:hover { }
+        #productCat figure { width: 56%; position: relative; overflow: hidden; height: 419px; }
+        #productCat img { position: relative; }
+        #productCat .metin { width: 44%; padding-left: 54px; }
+        #productCat .baslik { word-break: break-word; font-weight: 800; line-height: 40px; width: 100%; }
+        #productCat .baslik a { color: #303133; font-size: 35px; }
+        #productCat .item .metin .kisaOzet { -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; margin: 9px 0px 0px 0px; color: #555; font-weight: 400; font-size: 16px; line-height: 26px; }
+
+
+          #productCat .item .metin .more { background: var(--tema-renk1); display: flex; width: fit-content; padding: 3px 6px 3px 23px; border-radius: 38px; font: 600 16px var(--icerik-fontu); color: #fff; align-items: center; justify-content: space-between; gap: 15px; cursor: pointer; z-index: 50; transition: all .3s ease-out; width: 200px; height: 61px;margin-top:16px; }
+          #productCat .item .metin .more span { background: #fff; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; overflow: hidden; transition: all .3s ease-out; }
+          #productCat .item .metin .more:hover { border: solid 3px var(--tema-renk1); color: var(--tema-renk1) !important; }
+          #productCat .item .metin .more span i { display: flex; align-items: center; justify-content: center; color: #fff; }
+          #productCat .item .metin .more span i svg { filter: invert(1) }
+          #productCat .item .metin .sollaSaglaKap:before { background-color: #fff }
+          #productCat .item .metin .sollaSaglaKap:hover span { transform: scale(1.1); background: var(--tema-renk1) !important; }
+          #productCat .item .metin .sollaSaglaKap:hover span i svg { filter: initial }
+
+
+        @media (min-width:1200px) and (max-width:1400px) {
+            #productCat { padding: 108px 0; }
+            #productCat .item { }
+            #productCat .item figure { }
+            #productCat .item .metin { padding-left: 54px; }
+        }
+
+        @media (min-width:992px) and (max-width:1199px) {
+
+            #productCat { padding: 144px 42px; }
+            #productCat .item .metin { padding-left: 54px; }
+        }
+
+        @media (max-width: 768px) {
+            #productCat .item { display: block }
+            #productCat .metin { width: 100%; padding: 0 10px 0 54px; }
+            #productCat figure { width: 100%; height: 255px; border-radius: 12px !important; }
+
+            #productCat .item figure img { border-radius: 0; width: 140%; max-width: initial; position: absolute; left: 50%; top: 0; transform: translateX(-50%); }
+            #productCat .baslik { margin-top: 20px }
+            #productCat .item .metin .more{ margin-top: 20px }
+        }
+    </style>
+<title>
+	Yaş Pastalar
+</title><meta name="description" content="Yaş Pastalar" /><meta name="keywords" content="Yaş Pastalar" /></head>
+
+<body>
+
+    
+    <div id="genel-duyuru">
+        <p><strong>Vazge&ccedil;ilmez tatlar Baysak'la başlar.</strong></p>
+    </div>
+    
+    <header>
+        <div class="row wrap">
+            <div class="cl4 xs2">
+                <div id="hamburger2">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span class="menu-text">MENU</span>
+                </div>
+
+            </div>
+            <div class="cl4 xs12">
+                <a href="/" class="logo">
+                    <img src="/d/r/logo.svg?v=2" class="logoNormal" alt="Furkan Baysak" title="Furkan Baysak" />
+                </a>
+
+            </div>
+            <div class="cl4 xs10">
+                <div class="inner">
+                    <div class="sliderFollow">
+                        <a href="+90 (352) 225 65 56" target="_blank" class="telefon linkGit">
+                            <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="16px" height="16px" id="Capa_1" x="0px" y="0px" viewBox="0 0 53.942 53.942" style="enable-background: new 0 0 53.942 53.942;" xml:space="preserve">
+                                    <path d="M53.364,40.908c-2.008-3.796-8.981-7.912-9.288-8.092c-0.896-0.51-1.831-0.78-2.706-0.78c-1.301,0-2.366,0.596-3.011,1.68  c-1.02,1.22-2.285,2.646-2.592,2.867c-2.376,1.612-4.236,1.429-6.294-0.629L17.987,24.467c-2.045-2.045-2.233-3.928-0.632-6.291  c0.224-0.309,1.65-1.575,2.87-2.596c0.778-0.463,1.312-1.151,1.546-1.995c0.311-1.123,0.082-2.444-0.652-3.731  c-0.173-0.296-4.291-7.27-8.085-9.277c-0.708-0.375-1.506-0.573-2.306-0.573c-1.318,0-2.558,0.514-3.49,1.445L4.7,3.986  c-4.014,4.013-5.467,8.562-4.321,13.52c0.956,4.132,3.742,8.529,8.282,13.068l14.705,14.705c5.746,5.746,11.224,8.66,16.282,8.66  c0,0,0,0,0.001,0c3.72,0,7.188-1.581,10.305-4.698l2.537-2.537C54.033,45.163,54.383,42.833,53.364,40.908z" />
+ </svg></a>
+                        <a href="https://www.facebook.com/furkanbaysakpastaneler/" target="_blank" class="face linkGit">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16px" height="16px" viewBox="0 0 24 24">
+                                            <path fill="none" d="M0 0h24v24H0z" />
+                                            <path d="M14 13.5h2.5l1-4H14v-2c0-1.03 0-2 2-2h1.5V2.14c-.326-.043-1.557-.14-2.857-.14C11.928 2 10 3.657 10 6.7v2.8H7v4h3V22h4v-8.5z" />
+                                        </svg></a>
+                        <a href="https://www.instagram.com/furkanbaysakpastaneleri/" target="_blank" class="inst linkGit">
+                            <svg xmlns="http://www.w3.org/2000/svg" role="img" viewBox="0 0 24 24" width="18px" height="18px"><title>Instagram icon</title><path d="M12 0C8.74 0 8.333.015 7.053.072 5.775.132 4.905.333 4.14.63c-.789.306-1.459.717-2.126 1.384S.935 3.35.63 4.14C.333 4.905.131 5.775.072 7.053.012 8.333 0 8.74 0 12s.015 3.667.072 4.947c.06 1.277.261 2.148.558 2.913.306.788.717 1.459 1.384 2.126.667.666 1.336 1.079 2.126 1.384.766.296 1.636.499 2.913.558C8.333 23.988 8.74 24 12 24s3.667-.015 4.947-.072c1.277-.06 2.148-.262 2.913-.558.788-.306 1.459-.718 2.126-1.384.666-.667 1.079-1.335 1.384-2.126.296-.765.499-1.636.558-2.913.06-1.28.072-1.687.072-4.947s-.015-3.667-.072-4.947c-.06-1.277-.262-2.149-.558-2.913-.306-.789-.718-1.459-1.384-2.126C21.319 1.347 20.651.935 19.86.63c-.765-.297-1.636-.499-2.913-.558C15.667.012 15.26 0 12 0zm0 2.16c3.203 0 3.585.016 4.85.071 1.17.055 1.805.249 2.227.415.562.217.96.477 1.382.896.419.42.679.819.896 1.381.164.422.36 1.057.413 2.227.057 1.266.07 1.646.07 4.85s-.015 3.585-.074 4.85c-.061 1.17-.256 1.805-.421 2.227-.224.562-.479.96-.899 1.382-.419.419-.824.679-1.38.896-.42.164-1.065.36-2.235.413-1.274.057-1.649.07-4.859.07-3.211 0-3.586-.015-4.859-.074-1.171-.061-1.816-.256-2.236-.421-.569-.224-.96-.479-1.379-.899-.421-.419-.69-.824-.9-1.38-.165-.42-.359-1.065-.42-2.235-.045-1.26-.061-1.649-.061-4.844 0-3.196.016-3.586.061-4.861.061-1.17.255-1.814.42-2.234.21-.57.479-.96.9-1.381.419-.419.81-.689 1.379-.898.42-.166 1.051-.361 2.221-.421 1.275-.045 1.65-.06 4.859-.06l.045.03zm0 3.678c-3.405 0-6.162 2.76-6.162 6.162 0 3.405 2.76 6.162 6.162 6.162 3.405 0 6.162-2.76 6.162-6.162 0-3.405-2.76-6.162-6.162-6.162zM12 16c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm7.846-10.405c0 .795-.646 1.44-1.44 1.44-.795 0-1.44-.646-1.44-1.44 0-.794.646-1.439 1.44-1.439.793-.001 1.44.645 1.44 1.439z"/></svg></a>
+                        <a href="https://www.linkedin.com/company/%C3%A7ef-gida-a-%C5%9F-furkan-baysak-pastaneleri/" target="_blank" class="twit linkGit">
+                            <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"width="16px" height="16px" 
+                                    viewBox="0 0 310 310" style="enable-background: new 0 0 310 310;" xml:space="preserve">
+                                    <path id="XMLID_802_" d="M72.16,99.73H9.927c-2.762,0-5,2.239-5,5v199.928c0,2.762,2.238,5,5,5H72.16c2.762,0,5-2.238,5-5V104.73
+		C77.16,101.969,74.922,99.73,72.16,99.73z" />
+                                    <path id="XMLID_803_" d="M41.066,0.341C18.422,0.341,0,18.743,0,41.362C0,63.991,18.422,82.4,41.066,82.4
+		c22.626,0,41.033-18.41,41.033-41.038C82.1,18.743,63.692,0.341,41.066,0.341z" />
+                                    <path id="XMLID_804_" d="M230.454,94.761c-24.995,0-43.472,10.745-54.679,22.954V104.73c0-2.761-2.238-5-5-5h-59.599
+		c-2.762,0-5,2.239-5,5v199.928c0,2.762,2.238,5,5,5h62.097c2.762,0,5-2.238,5-5v-98.918c0-33.333,9.054-46.319,32.29-46.319
+		c25.306,0,27.317,20.818,27.317,48.034v97.204c0,2.762,2.238,5,5,5H305c2.762,0,5-2.238,5-5V194.995
+		C310,145.43,300.549,94.761,230.454,94.761z" />
+                                </svg></a>
+                    </div>
+                    
+                    <a href="/bayi-portal" class="booking"><span class="rolling-text">BAYİ PORTAL</span></a>
+                </div>
+            </div>
+        </div>
+        <div id="hamburger">
+            <svg class="ham hamRotate ham1 z-50" viewBox="0 0 100 100" width="104">
+                <path class="line top" d="m 30,38 h 40 c 0,0 9.044436,-0.654587 9.044436,-8.508902 0,-7.854315 -8.024349,-11.958003 -14.89975,-10.85914 -6.875401,1.098863 -13.637059,4.171617 -13.637059,16.368042 v 40"></path>
+                <path class="line middle" d="m 30,50 h 40"></path>
+                <path class="line bottom" d="m 30,62 h 40 c 12.796276,0 15.357889,-11.717785 15.357889,-26.851538 0,-15.133752 -4.786586,-27.274118 -16.667516,-27.274118 -11.88093,0 -18.499247,6.994427 -18.435284,17.125656 l 0.252538,40"></path>
+            </svg>
+        </div>
+        
+        <div id="mobilMenu2">
+            <div class="row">
+                <div class="cl8 xs12">
+                    <nav id='Menu1772'><ul class='ul1'><li class='li1 okKoy okKoy0'><a href='javascript:;' title='Kurumsal'>Kurumsal</a><div class='ulWrap2'><ul class='ul2'><li class='li2'><a href='/kurumsal/hakkimizda' title='Hakkımızda'>Hakkımızda</a></li><li class='li2'><a href='/kariyer' title='İnsan Kaynakları'>İnsan Kaynakları</a></li><li class='li2'><a href='/franchaise' title='Franchaise'>Franchaise</a></li><li class='li2'><a href='/blog' title='Blog'>Blog</a></li><li class='li2'><a href='/sss' title='Sık Sorulan Sorular'>Sık Sorulan Sorular</a></li><li class='li2'><a href='/iletisim' title='İletişim'>İletişim</a></li></ul></div></li><li class='li1 okKoy okKoy1'><a href='javascript:;' title='Ürünlerimiz'>Ürünlerimiz</a><div class='ulWrap2'><ul class='ul2'><li class='li2'><a href='/yas-pastalar' title='Yaş Pastalar'>Yaş Pastalar</a></li><li class='li2'><a href='/tatlilar' title='Tatlılar'>Tatlılar</a></li><li class='li2'><a href='/kuru-pastalar' title='Kuru Pastalar'>Kuru Pastalar</a></li><li class='li2'><a href='/specialler' title='Specialler'>Specialler</a></li><li class='li2'><a href='/mayali-kahvalti' title='Mayalı - Kahvaltı'>Mayalı - Kahvaltı</a></li><li class='li2'><a href='/eksi-mayali-ekmekler' title='Ekşi Mayalı Ekmekler'>Ekşi Mayalı Ekmekler</a></li></ul></div></li><li class='li1 okKoy okKoy2'><a href='javascript:;' title='Şubelerimiz'>Şubelerimiz</a><div class='ulWrap2'><ul class='ul2'><li class='li2'><a href='/subelerimiz?ilId=1587' title='Kayseri'>Kayseri</a></li><li class='li2'><a href='/subelerimiz?ilId=1591' title='Aksaray'>Aksaray</a></li><li class='li2'><a href='/subelerimiz?ilId=1588' title='Nevşehir'>Nevşehir</a></li><li class='li2'><a href='/subelerimiz?ilId=1589' title='Niğde'>Niğde</a></li><li class='li2'><a href='/subelerimiz?ilId=1590' title='Sivas'>Sivas</a></li></ul></div></li></ul></nav>
+                </div>
+                <div class="cl4 xs12">
+                    <div class="locations">
+                        <div class="location_item">
+                            <span class="icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="16px" height="16px" viewBox="0 0 100 100" xml:space="preserve">
+                                    <path d="M96.3,89.9c4-4,3.5-10.6-1.1-14L79.3,64.3c-3.7-2.7-8.8-2.3-12,0.9l-2.7,2.7c-0.3,0.3-0.6,0.6-1,0.9c-1.3,1.3-3.2,1.7-5,1.1  C44.9,64.5,35.4,55,30.2,41.2c-0.7-1.7-0.2-3.7,1.1-5l0.5-0.5c0.1-0.1,0.2-0.3,0.4-0.4l2.7-2.7c3.2-3.2,3.6-8.3,0.9-12L24.1,4.8  c-3.4-4.6-10-5.1-14-1.1L7.3,6.5c-3.2,3.2-5.3,7.3-6,11.8c-0.1,0.6-0.2,1.2-0.2,1.9C0.4,31,4.3,42.7,12.4,55.1  c0.3,0.4,0.5,0.8,0.8,1.3c8,12,18.4,22.4,30.4,30.4c0.4,0.3,0.8,0.5,1.2,0.8c12.4,8.1,24.2,12,35.1,11.3c0.6,0,1.2-0.1,1.8-0.2  c4.5-0.7,8.6-2.8,11.8-6L96.3,89.9L96.3,89.9z"></path>
+                                    <path d="M99,47.7c-0.9-12.1-6.1-23.4-14.7-32C75.8,7.1,64.4,1.9,52.3,1c-1.8-0.1-3.4,1.2-3.6,3.1c-0.1,1.8,1.2,3.4,3.1,3.6  c10.5,0.8,20.4,5.3,27.8,12.7c7.4,7.4,12,17.3,12.7,27.8c0.1,1.7,1.6,3.1,3.3,3.1c0.1,0,0.2,0,0.2,0C97.8,51.1,99.1,49.5,99,47.7  L99,47.7z"></path>
+                                    <path d="M71.9,30.6c-5.3-5.3-11.9-8.5-19.3-9.5c-1.9-0.2-3.6,1.1-3.9,3c-0.2,1.9,1.1,3.6,3,3.9c5.8,0.7,11.1,3.3,15.3,7.5  c4.2,4.2,6.8,9.4,7.5,15.3c0.2,1.7,1.7,3,3.4,3c0.1,0,0.3,0,0.4,0c1.9-0.2,3.2-2,3-3.9C80.4,42.5,77.2,35.9,71.9,30.6L71.9,30.6z"></path></svg></span>
+                            <span class="text">
+                                <a href="tel:903522256556">+90 (352) 225 65 56</a></span>
+                        </div>
+                        <div class="location_item">
+                            <span class="icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="16px" height="16px" viewBox="0 0 100 100" xml:space="preserve">
+                                    <path d="M38.7,46C38.7,46,38.7,46,38.7,46L38.7,46C38.8,46,38.8,46,38.7,46C38.8,46,38.8,46,38.7,46l3.7,3.4  c4.3,3.9,10.9,3.9,15.1,0l3.5-3.2l0.4-0.4l31.9-29.1c0.2-0.2,0.1-0.6-0.2-0.6H6.8c-0.3,0-0.5,0.4-0.2,0.6L38.7,46  C38.7,45.9,38.7,45.9,38.7,46C38.7,45.9,38.7,46,38.7,46C38.7,46,38.7,46,38.7,46z"></path>
+                                    <path d="M1.6,21.6C1.3,21.4,1,21.5,1,21.8v56.3c0,0.3,0.4,0.4,0.6,0.2L21,58.6c5.5-5.6,5.2-14.7-0.6-20L1.6,21.6z"></path>
+                                    <path d="M52.1,61.8C52.1,61.8,52.1,61.8,52.1,61.8c-0.6,0.6-1.3,0.8-2.1,0.8c-0.7,0-1.5-0.3-2.1-0.8l-6.9-6.5  c-2.4-2.2-6.1-2.1-8.3,0.2L6.6,83.3c-0.2,0.2-0.1,0.6,0.2,0.6h86.4c0.3,0,0.5-0.4,0.2-0.6L67.3,55.6c-2.2-2.4-6-2.5-8.3-0.2  L52.1,61.8C52.1,61.8,52.1,61.8,52.1,61.8z"></path>
+                                    <path d="M99,21.1C99,21.1,99,21.1,99,21.1L77.5,40.5c-4.7,4.2-4.9,11.6-0.5,16.1l21.4,21.8c0.2,0.2,0.6,0.1,0.6-0.2V21.8  C99,21.6,99,21.3,99,21.1C99,21.1,99,21.1,99,21.1z"></path></svg></span>
+                            <span class="text"><a href="mailto:info@furkanbaysak.com.tr">info@furkanbaysak.com.tr</a></span>
+                        </div>
+                        <div class="location_item">
+                            <span class="icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Capa_1" x="0px" y="0px" width="16px" height="16px" viewBox="0 0 35.219 35.219" style="enable-background: new 0 0 35.219 35.219;" xml:space="preserve">
+                                    <path d="M17.612,0C11.005,0,5.648,5.321,5.648,11.885c0,3.358,3.294,9.374,3.294,9.374l8.229,13.96l8.586-13.797   c0,0,3.814-5.74,3.814-9.537C29.572,5.321,24.216,0,17.612,0z M17.556,18.431c-3.784,0-6.849-3.065-6.849-6.853   c0-3.783,3.064-6.846,6.849-6.846c3.782,0,6.85,3.063,6.85,6.846C24.406,15.366,21.338,18.431,17.556,18.431z"></path>
+                                </svg></span>
+                            <span class="text">Mimarsinan Organize Sanayi Bölgesi 25. Cadde No : 51 Melikgazi / Kayseri</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </header>
+
+
+
+
+
+
+    <main>
+        
+    <section class="sayfaTepe">
+        <div class="tepe-overlay"></div>
+        <div class="tepe-bg">
+            <figure><img src='/d/r/yas-pastalar-1131895424.jpg' alt='Yaş Pastalar' title='Yaş Pastalar' /></figure>
+        </div>
+        <div class="container">
+            <h1 itemprop="headline">Yaş Pastalar</h1>
+        </div>
+    </section>
+
+    <section id="productCat">
+        
+                <div class="item">
+                    <figure class="parallax-container3" data-aos="fade-in" data-aos-duration="0">
+                        <img src="/d/r/meyveli-yas-pasta-3319525352.jpg" class="parallax-img3" alt="Meyveli Yaş Pasta" title="Meyveli Yaş Pasta" onerror="this.onerror=null; this.src='/d/r/noimage.jpg';" />
+                    </figure>
+                    <div class="metin" data-aos="fade-in" data-aos-duration="0">
+                        <div class="baslik">
+                            <a href="/yas-pastalar/meyveli-yas-pasta">
+                                Meyveli Yaş Pasta
+                            </a>
+                        </div>
+                        <div class="kisaOzet"><p>Ferah ve hafif bir tat i&ccedil;in taze meyvelerle hazırladığımız meyveli yaş pastalarımızla damakları şenlendiriyoruz. Her dilimiyle eşsiz bir lezzet deneyimi sunuyoruz!</p></div>
+
+                        <a href="/yas-pastalar/meyveli-yas-pasta" class="more sollaSaglaKap">İncele<span><i><svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_114_993)">
+<path d="M25.4854 17.0003L6.98324 17.0003" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M18 7.9812L27.0156 16.9968L18 26.0124" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<defs>
+<clipPath id="clip0_114_993">
+<rect width="34" height="34" fill="white"/>
+</clipPath>
+</defs>
+</svg></i></span></a>
+                    </div>
+                </div>
+            
+                <div class="item">
+                    <figure class="parallax-container3" data-aos="fade-in" data-aos-duration="600">
+                        <img src="/d/r/kitkatli-pasta-3745973117.jpg" class="parallax-img3" alt="Kitkatlı Pasta" title="Kitkatlı Pasta" onerror="this.onerror=null; this.src='/d/r/noimage.jpg';" />
+                    </figure>
+                    <div class="metin" data-aos="fade-in" data-aos-duration="1000">
+                        <div class="baslik">
+                            <a href="/yas-pastalar/kitkatli-pasta">
+                                Kitkatlı Pasta
+                            </a>
+                        </div>
+                        <div class="kisaOzet"><p>&Ccedil;ikolata tutkunları i&ccedil;in hazırladığımız Kitkatlı yaş pastalarımız, her lokmada yoğun &ccedil;ikolata lezzeti sunuyor. Kitkat &ccedil;ubuklarıyla &ccedil;evrili, nefis kremasıyla tatlı keyfini doruğa &ccedil;ıkarıyoruz!</p></div>
+
+                        <a href="/yas-pastalar/kitkatli-pasta" class="more sollaSaglaKap">İncele<span><i><svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_114_993)">
+<path d="M25.4854 17.0003L6.98324 17.0003" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M18 7.9812L27.0156 16.9968L18 26.0124" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<defs>
+<clipPath id="clip0_114_993">
+<rect width="34" height="34" fill="white"/>
+</clipPath>
+</defs>
+</svg></i></span></a>
+                    </div>
+                </div>
+            
+                <div class="item">
+                    <figure class="parallax-container3" data-aos="fade-in" data-aos-duration="1200">
+                        <img src="/d/r/cikolatali-yas-pasta-4310167235.jpg" class="parallax-img3" alt="Çikolatalı Yaş Pasta" title="Çikolatalı Yaş Pasta" onerror="this.onerror=null; this.src='/d/r/noimage.jpg';" />
+                    </figure>
+                    <div class="metin" data-aos="fade-in" data-aos-duration="2000">
+                        <div class="baslik">
+                            <a href="/yas-pastalar/cikolatali-yas-pasta">
+                                Çikolatalı Yaş Pasta
+                            </a>
+                        </div>
+                        <div class="kisaOzet"><p>Zengin &ccedil;ikolata lezzetiyle hazırladığımız &ccedil;ikolatalı yaş pastalarımız, her lokmada yoğun ve yumuşacık bir deneyim sunuyor. Şık sunumu ve eşsiz tadıyla &ccedil;ikolata severlerin vazge&ccedil;ilmezi!</p></div>
+
+                        <a href="/yas-pastalar/cikolatali-yas-pasta" class="more sollaSaglaKap">İncele<span><i><svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_114_993)">
+<path d="M25.4854 17.0003L6.98324 17.0003" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M18 7.9812L27.0156 16.9968L18 26.0124" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<defs>
+<clipPath id="clip0_114_993">
+<rect width="34" height="34" fill="white"/>
+</clipPath>
+</defs>
+</svg></i></span></a>
+                    </div>
+                </div>
+            
+                <div class="item">
+                    <figure class="parallax-container3" data-aos="fade-in" data-aos-duration="1800">
+                        <img src="/d/r/burger-pasta-460790045.jpg" class="parallax-img3" alt="Burger Pasta" title="Burger Pasta" onerror="this.onerror=null; this.src='/d/r/noimage.jpg';" />
+                    </figure>
+                    <div class="metin" data-aos="fade-in" data-aos-duration="3000">
+                        <div class="baslik">
+                            <a href="/yas-pastalar/burger-pasta">
+                                Burger Pasta
+                            </a>
+                        </div>
+                        <div class="kisaOzet"><p>Burger pasta, tatlı d&uuml;nyasında devrim yaratan bir lezzet! Hem g&ouml;z alıcı hem de nefis, ger&ccedil;ek bir burger g&ouml;r&uuml;n&uuml;m&uuml;nde ama tamamen tatlı malzemelerle hazırlanmış bu pasta, herkesin ilgisini &ccedil;ekecek!</p></div>
+
+                        <a href="/yas-pastalar/burger-pasta" class="more sollaSaglaKap">İncele<span><i><svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_114_993)">
+<path d="M25.4854 17.0003L6.98324 17.0003" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M18 7.9812L27.0156 16.9968L18 26.0124" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<defs>
+<clipPath id="clip0_114_993">
+<rect width="34" height="34" fill="white"/>
+</clipPath>
+</defs>
+</svg></i></span></a>
+                    </div>
+                </div>
+            
+                <div class="item">
+                    <figure class="parallax-container3" data-aos="fade-in" data-aos-duration="2400">
+                        <img src="/d/r/cilekli-guvec-4657632233.jpg" class="parallax-img3" alt="Çilekli Güveç" title="Çilekli Güveç" onerror="this.onerror=null; this.src='/d/r/noimage.jpg';" />
+                    </figure>
+                    <div class="metin" data-aos="fade-in" data-aos-duration="4000">
+                        <div class="baslik">
+                            <a href="/yas-pastalar/cilekli-guvec">
+                                Çilekli Güveç
+                            </a>
+                        </div>
+                        <div class="kisaOzet"><p>&Ccedil;ilekli g&uuml;ve&ccedil;, taze &ccedil;ileklerin eşsiz lezzetini sıcak ve tatlı bir sunumla buluşturuyor. Fırından yeni &ccedil;ıkmış, hafif, ferahlatıcı, lezzetli ve doyurucu bir tat arayanlar i&ccedil;in m&uuml;kemmel bir se&ccedil;enek!</p></div>
+
+                        <a href="/yas-pastalar/cilekli-guvec" class="more sollaSaglaKap">İncele<span><i><svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_114_993)">
+<path d="M25.4854 17.0003L6.98324 17.0003" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M18 7.9812L27.0156 16.9968L18 26.0124" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<defs>
+<clipPath id="clip0_114_993">
+<rect width="34" height="34" fill="white"/>
+</clipPath>
+</defs>
+</svg></i></span></a>
+                    </div>
+                </div>
+            
+                <div class="item">
+                    <figure class="parallax-container3" data-aos="fade-in" data-aos-duration="3000">
+                        <img src="/d/r/malaga-4843190934.jpg" class="parallax-img3" alt="Malaga" title="Malaga" onerror="this.onerror=null; this.src='/d/r/noimage.jpg';" />
+                    </figure>
+                    <div class="metin" data-aos="fade-in" data-aos-duration="5000">
+                        <div class="baslik">
+                            <a href="/yas-pastalar/malaga">
+                                Malaga
+                            </a>
+                        </div>
+                        <div class="kisaOzet"><p>Zengin Malaga lezzetiyle hazırladığımız pastalarımız, taze meyve aromalarıyla her lokmada damaklarda unutulmaz bir tat bırakıyor. Sofistike ve ferahlatıcı bu tat, tatlı severler i&ccedil;in eşsiz bir deneyim sunuyor!</p></div>
+
+                        <a href="/yas-pastalar/malaga" class="more sollaSaglaKap">İncele<span><i><svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_114_993)">
+<path d="M25.4854 17.0003L6.98324 17.0003" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M18 7.9812L27.0156 16.9968L18 26.0124" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<defs>
+<clipPath id="clip0_114_993">
+<rect width="34" height="34" fill="white"/>
+</clipPath>
+</defs>
+</svg></i></span></a>
+                    </div>
+                </div>
+            
+                <div class="item">
+                    <figure class="parallax-container3" data-aos="fade-in" data-aos-duration="3600">
+                        <img src="/d/r/magnolia-cesitleri-5042609817.jpg" class="parallax-img3" alt="Magnolia Çeşitleri" title="Magnolia Çeşitleri" onerror="this.onerror=null; this.src='/d/r/noimage.jpg';" />
+                    </figure>
+                    <div class="metin" data-aos="fade-in" data-aos-duration="6000">
+                        <div class="baslik">
+                            <a href="/yas-pastalar/magnolia-cesitleri">
+                                Magnolia Çeşitleri
+                            </a>
+                        </div>
+                        <div class="kisaOzet"><p>Farklı meyve ve &ccedil;ikolata &ccedil;eşitleriyle hazırladığımız Magnolia tatlılarımız, her damağa hitap eden eşsiz lezzetler sunuyor. Hafif, kremalı ve meyveli dokusuyla tatlı keyfini doruğa &ccedil;ıkarıyoruz!</p></div>
+
+                        <a href="/yas-pastalar/magnolia-cesitleri" class="more sollaSaglaKap">İncele<span><i><svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_114_993)">
+<path d="M25.4854 17.0003L6.98324 17.0003" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M18 7.9812L27.0156 16.9968L18 26.0124" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<defs>
+<clipPath id="clip0_114_993">
+<rect width="34" height="34" fill="white"/>
+</clipPath>
+</defs>
+</svg></i></span></a>
+                    </div>
+                </div>
+            
+                <div class="item">
+                    <figure class="parallax-container3" data-aos="fade-in" data-aos-duration="4200">
+                        <img src="/d/r/cilekli-magnolia-5348556977.jpg" class="parallax-img3" alt="Çilekli Magnolia" title="Çilekli Magnolia" onerror="this.onerror=null; this.src='/d/r/noimage.jpg';" />
+                    </figure>
+                    <div class="metin" data-aos="fade-in" data-aos-duration="7000">
+                        <div class="baslik">
+                            <a href="/yas-pastalar/cilekli-magnolia">
+                                Çilekli Magnolia
+                            </a>
+                        </div>
+                        <div class="kisaOzet"><p>&Ccedil;ilekli Magnolia tatlımız, taze &ccedil;ileklerin ferahlatıcı lezzetiyle kremalı dokusunun m&uuml;kemmel uyumunu sunuyor. Hafif, meyveli ve tatlı keyfini doruğa &ccedil;ıkaran eşsiz bir lezzet deneyimi!</p></div>
+
+                        <a href="/yas-pastalar/cilekli-magnolia" class="more sollaSaglaKap">İncele<span><i><svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_114_993)">
+<path d="M25.4854 17.0003L6.98324 17.0003" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M18 7.9812L27.0156 16.9968L18 26.0124" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<defs>
+<clipPath id="clip0_114_993">
+<rect width="34" height="34" fill="white"/>
+</clipPath>
+</defs>
+</svg></i></span></a>
+                    </div>
+                </div>
+            
+                <div class="item">
+                    <figure class="parallax-container3" data-aos="fade-in" data-aos-duration="4800">
+                        <img src="/d/r/prenses-pasta-cesitleri-553820855.jpg" class="parallax-img3" alt="Prenses Pasta Çeşitleri" title="Prenses Pasta Çeşitleri" onerror="this.onerror=null; this.src='/d/r/noimage.jpg';" />
+                    </figure>
+                    <div class="metin" data-aos="fade-in" data-aos-duration="8000">
+                        <div class="baslik">
+                            <a href="/yas-pastalar/prenses-pasta-cesitleri">
+                                Prenses Pasta Çeşitleri
+                            </a>
+                        </div>
+                        <div class="kisaOzet"><p>Renkli ve şık tasarımlarıyla g&ouml;z alıcı bir g&ouml;rsellik sunarken, lezzetleriyle de damakları şenlendiriyor. Her bir &ccedil;eşit, hafif kremalar ve &ouml;zenle se&ccedil;ilen malzemelerle, tatlı severlere unutulmaz bir deneyim yaşatıyor!</p></div>
+
+                        <a href="/yas-pastalar/prenses-pasta-cesitleri" class="more sollaSaglaKap">İncele<span><i><svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_114_993)">
+<path d="M25.4854 17.0003L6.98324 17.0003" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M18 7.9812L27.0156 16.9968L18 26.0124" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<defs>
+<clipPath id="clip0_114_993">
+<rect width="34" height="34" fill="white"/>
+</clipPath>
+</defs>
+</svg></i></span></a>
+                    </div>
+                </div>
+            
+                <div class="item">
+                    <figure class="parallax-container3" data-aos="fade-in" data-aos-duration="5400">
+                        <img src="/d/r/profiterol-567854769.jpg" class="parallax-img3" alt="Profiteröl" title="Profiteröl" onerror="this.onerror=null; this.src='/d/r/noimage.jpg';" />
+                    </figure>
+                    <div class="metin" data-aos="fade-in" data-aos-duration="9000">
+                        <div class="baslik">
+                            <a href="/yas-pastalar/profiterol">
+                                Profiteröl
+                            </a>
+                        </div>
+                        <div class="kisaOzet"><p>&Ccedil;ıtır profiterol toplarımız, kremalı dolgusu ve hafif yapısıyla her lokmada enfes bir lezzet sunuyor. Hem şık hem pratik olan bu tatlı, tatlı severler i&ccedil;in m&uuml;kemmel ve eşsiz bir se&ccedil;enek.</p></div>
+
+                        <a href="/yas-pastalar/profiterol" class="more sollaSaglaKap">İncele<span><i><svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_114_993)">
+<path d="M25.4854 17.0003L6.98324 17.0003" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M18 7.9812L27.0156 16.9968L18 26.0124" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<defs>
+<clipPath id="clip0_114_993">
+<rect width="34" height="34" fill="white"/>
+</clipPath>
+</defs>
+</svg></i></span></a>
+                    </div>
+                </div>
+            
+    </section>
+
+
+    <section id="katIcerik">
+        <div class="container">
+            <div class="icerik">
+                
+            </div>
+        </div>
+    </section>
+
+        <div class="pakla"></div>
+    </main>
+
+
+
+    <footer>
+        <div class="satir1">
+            <figure>
+                <img src="/d/r/logo.png" />
+            </figure>
+            <div class="footSocial">
+                <div class="baslik">Bizi Takip Edin</div>
+                <ul class="social">
+                    <li>
+                        <a href="https://www.facebook.com/furkanbaysakpastaneler/" target="_blank">
+                            <i><svg xmlns="http://www.w3.org/2000/svg" width="16px" height="16px" viewBox="0 0 24 24">
+                                            <path fill="none" d="M0 0h24v24H0z" />
+                                            <path d="M14 13.5h2.5l1-4H14v-2c0-1.03 0-2 2-2h1.5V2.14c-.326-.043-1.557-.14-2.857-.14C11.928 2 10 3.657 10 6.7v2.8H7v4h3V22h4v-8.5z" />
+                                        </svg></i></a>
+                    </li>
+                    <li>
+                        <a href="javascript:;" target="_blank">
+                            <i><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Layer_1" x="0px" y="0px" width="16px" height="16px"  viewBox="0 0 310 310" style="enable-background:new 0 0 310 310;" xml:space="preserve">
+<path id="XMLID_827_" d="M302.973,57.388c-4.87,2.16-9.877,3.983-14.993,5.463c6.057-6.85,10.675-14.91,13.494-23.73   c0.632-1.977-0.023-4.141-1.648-5.434c-1.623-1.294-3.878-1.449-5.665-0.39c-10.865,6.444-22.587,11.075-34.878,13.783   c-12.381-12.098-29.197-18.983-46.581-18.983c-36.695,0-66.549,29.853-66.549,66.547c0,2.89,0.183,5.764,0.545,8.598   C101.163,99.244,58.83,76.863,29.76,41.204c-1.036-1.271-2.632-1.956-4.266-1.825c-1.635,0.128-3.104,1.05-3.93,2.467   c-5.896,10.117-9.013,21.688-9.013,33.461c0,16.035,5.725,31.249,15.838,43.137c-3.075-1.065-6.059-2.396-8.907-3.977   c-1.529-0.851-3.395-0.838-4.914,0.033c-1.52,0.871-2.473,2.473-2.513,4.224c-0.007,0.295-0.007,0.59-0.007,0.889   c0,23.935,12.882,45.484,32.577,57.229c-1.692-0.169-3.383-0.414-5.063-0.735c-1.732-0.331-3.513,0.276-4.681,1.597   c-1.17,1.32-1.557,3.16-1.018,4.84c7.29,22.76,26.059,39.501,48.749,44.605c-18.819,11.787-40.34,17.961-62.932,17.961   c-4.714,0-9.455-0.277-14.095-0.826c-2.305-0.274-4.509,1.087-5.294,3.279c-0.785,2.193,0.047,4.638,2.008,5.895   c29.023,18.609,62.582,28.445,97.047,28.445c67.754,0,110.139-31.95,133.764-58.753c29.46-33.421,46.356-77.658,46.356-121.367   c0-1.826-0.028-3.67-0.084-5.508c11.623-8.757,21.63-19.355,29.773-31.536c1.237-1.85,1.103-4.295-0.33-5.998   C307.394,57.037,305.009,56.486,302.973,57.388z"/>
+</svg></i></a>
+                    </li>
+                    <li>
+                        <a href="https://www.instagram.com/furkanbaysakpastaneleri/" target="_blank">
+                            <i><svg xmlns="http://www.w3.org/2000/svg" role="img" viewBox="0 0 24 24" width="18px" height="18px"><title>Instagram icon</title><path d="M12 0C8.74 0 8.333.015 7.053.072 5.775.132 4.905.333 4.14.63c-.789.306-1.459.717-2.126 1.384S.935 3.35.63 4.14C.333 4.905.131 5.775.072 7.053.012 8.333 0 8.74 0 12s.015 3.667.072 4.947c.06 1.277.261 2.148.558 2.913.306.788.717 1.459 1.384 2.126.667.666 1.336 1.079 2.126 1.384.766.296 1.636.499 2.913.558C8.333 23.988 8.74 24 12 24s3.667-.015 4.947-.072c1.277-.06 2.148-.262 2.913-.558.788-.306 1.459-.718 2.126-1.384.666-.667 1.079-1.335 1.384-2.126.296-.765.499-1.636.558-2.913.06-1.28.072-1.687.072-4.947s-.015-3.667-.072-4.947c-.06-1.277-.262-2.149-.558-2.913-.306-.789-.718-1.459-1.384-2.126C21.319 1.347 20.651.935 19.86.63c-.765-.297-1.636-.499-2.913-.558C15.667.012 15.26 0 12 0zm0 2.16c3.203 0 3.585.016 4.85.071 1.17.055 1.805.249 2.227.415.562.217.96.477 1.382.896.419.42.679.819.896 1.381.164.422.36 1.057.413 2.227.057 1.266.07 1.646.07 4.85s-.015 3.585-.074 4.85c-.061 1.17-.256 1.805-.421 2.227-.224.562-.479.96-.899 1.382-.419.419-.824.679-1.38.896-.42.164-1.065.36-2.235.413-1.274.057-1.649.07-4.859.07-3.211 0-3.586-.015-4.859-.074-1.171-.061-1.816-.256-2.236-.421-.569-.224-.96-.479-1.379-.899-.421-.419-.69-.824-.9-1.38-.165-.42-.359-1.065-.42-2.235-.045-1.26-.061-1.649-.061-4.844 0-3.196.016-3.586.061-4.861.061-1.17.255-1.814.42-2.234.21-.57.479-.96.9-1.381.419-.419.81-.689 1.379-.898.42-.166 1.051-.361 2.221-.421 1.275-.045 1.65-.06 4.859-.06l.045.03zm0 3.678c-3.405 0-6.162 2.76-6.162 6.162 0 3.405 2.76 6.162 6.162 6.162 3.405 0 6.162-2.76 6.162-6.162 0-3.405-2.76-6.162-6.162-6.162zM12 16c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm7.846-10.405c0 .795-.646 1.44-1.44 1.44-.795 0-1.44-.646-1.44-1.44 0-.794.646-1.439 1.44-1.439.793-.001 1.44.645 1.44 1.439z"/></svg></i></a>
+                    </li>
+                    <li>
+                        <a href="https://www.linkedin.com/company/%C3%A7ef-gida-a-%C5%9F-furkan-baysak-pastaneleri/" target="_blank">
+                            <i><svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"width="16px" height="16px" 
+                                    viewBox="0 0 310 310" style="enable-background: new 0 0 310 310;" xml:space="preserve">
+                                    <path id="XMLID_802_" d="M72.16,99.73H9.927c-2.762,0-5,2.239-5,5v199.928c0,2.762,2.238,5,5,5H72.16c2.762,0,5-2.238,5-5V104.73
+		C77.16,101.969,74.922,99.73,72.16,99.73z" />
+                                    <path id="XMLID_803_" d="M41.066,0.341C18.422,0.341,0,18.743,0,41.362C0,63.991,18.422,82.4,41.066,82.4
+		c22.626,0,41.033-18.41,41.033-41.038C82.1,18.743,63.692,0.341,41.066,0.341z" />
+                                    <path id="XMLID_804_" d="M230.454,94.761c-24.995,0-43.472,10.745-54.679,22.954V104.73c0-2.761-2.238-5-5-5h-59.599
+		c-2.762,0-5,2.239-5,5v199.928c0,2.762,2.238,5,5,5h62.097c2.762,0,5-2.238,5-5v-98.918c0-33.333,9.054-46.319,32.29-46.319
+		c25.306,0,27.317,20.818,27.317,48.034v97.204c0,2.762,2.238,5,5,5H305c2.762,0,5-2.238,5-5V194.995
+		C310,145.43,300.549,94.761,230.454,94.761z" />
+                                </svg></i></a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="satir2">
+            <div class="row">
+                <div class="cl9 xs12">
+                    <table>
+<tbody>
+<tr>
+<td>
+<h2>Kurumsal</h2>
+<p><a href="https://www.furkanbaysak.com.tr/kurumsal/hakkimizda">Hakkımızda</a></p>
+<p><a href="https://www.furkanbaysak.com.tr/bayi-portal">Bayi Portal</a></p>
+<p><a href="https://www.furkanbaysak.com.tr/kariyer">İnsan Kaynakları</a></p>
+<p><a href="https://www.furkanbaysak.com.tr/franchaise">Franchaise</a></p>
+<p><a href="https://www.furkanbaysak.com.tr/blog">Blog</a></p>
+<p><a href="https://www.furkanbaysak.com.tr/sss">Sık Sorulan Sorular</a></p>
+<p><a href="https://www.furkanbaysak.com.tr/iletisim">İletişim</a></p>
+</td>
+<td>
+<h2>&Uuml;r&uuml;nler</h2>
+<p><a href="https://www.furkanbaysak.com.tr/yas-pastalar">Yaş Pastalar</a></p>
+<p><a href="https://www.furkanbaysak.com.tr/tatlilar">Tatlılar</a></p>
+<p><a href="https://www.furkanbaysak.com.tr/kuru-pastalar">Kuru Pastalar</a></p>
+<p><a href="https://www.furkanbaysak.com.tr/specialler">Specialler</a></p>
+<p><a href="https://www.furkanbaysak.com.tr/mayali-kahvalti">Mayalı - Kahvaltı</a></p>
+<p><a href="https://www.furkanbaysak.com.tr/eksi-mayali-ekmekler">Ekşi Mayalı Ekmekler</a></p>
+</td>
+<td>
+<h2>Şubelerimiz</h2>
+<p><a href="https://www.furkanbaysak.com.tr/subelerimiz?ilId=1587">Kayseri</a></p>
+<p><a href="https://www.furkanbaysak.com.tr/subelerimiz?ilId=1591">Aksaray</a></p>
+<p><a href="https://www.furkanbaysak.com.tr/subelerimiz?ilId=1588">Nevşehir</a></p>
+<p><a href="https://www.furkanbaysak.com.tr/subelerimiz?ilId=1589">Niğde</a></p>
+<p><a href="https://www.furkanbaysak.com.tr/subelerimiz?ilId=1590">Sivas</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+                </div>
+                <div class="cl3 xs12">
+                    <div class="footIlet">
+                        <div class="kap">
+                            <span>Adres</span>
+                            Mimarsinan Organize Sanayi Bölgesi 25. Cadde No : 51 Melikgazi / Kayseri
+                        </div>
+                        <div class="kap">
+                            <span>Müşteri Hizmetleri</span>
+                            <a href="tel:903522256556" target="_blank" class="links">+90 (352) 225 65 56</a>
+                            <a href="tel:" target="_blank" class="links"></a>
+                        </div>
+                        <div class="kap">
+                            <span>E-Posta</span>
+                            <a href="mailto:info@furkanbaysak.com.tr" target="_blank" class="links">info@furkanbaysak.com.tr</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <div class="satir3">
+            <div class="row">
+                <div class="cl6 xs12">
+                    <div class="kap">
+                        <div class="copy">
+                            © 2026 Tüm Hakları Saklıdır
+                        </div>
+                        <div class="imza">
+                            <a href="https://www.instagram.com/medyatikajans/" title="Kayseri Web Design" target="_blank" class="bir">Web Design</a>
+                            <a href="https://www.instagram.com/medyatikajans/" title="Digital Solutions" target="_blank" class="iki">Medyatik Ajans</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="cl6 xs12">
+                    <div class="contract">
+                        <ul>
+                            
+                                    <li><a href="/sozlesmeler/kvkk-aydinlatma-metni">KVKK Aydınlatma Metni ve Gizlilik Politikası</a></li>
+                                
+                                    <li><a href="/sozlesmeler/cerez-politikasi">Çerez Politikası</a></li>
+                                
+                        </ul>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </footer>
+
+
+    <div class="site-backtop">
+        <svg class="swm-svg--arrow swm-svg-btt-btn-arrow" height="512" viewBox="0 0 24 24" width="512" xmlns="http://www.w3.org/2000/svg">
+            <path d="m4 11.5h14.793l-7.14652-7.14648a.5.5 0 0 1 .707-.707l8 8a.49983.49983 0 0 1 0 .707l-8 8a.5.5 0 0 1 -.707-.707l7.14652-7.14652h-14.793a.5.5 0 0 1 0-1z"></path></svg>
+    </div>
+
+    <div id="randevuAlContainer">
+        <a href="javascript:;" class="kapat" onclick="$('#randevuAlContainer .inner').remove();$('#randevuAlContainer').hide()">X</a>
+    </div>
+    
+
+
+    <div id="loading-screen">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 193.52 17.09">
+            <defs>
+                <style>
+                    .cls-1 { fill: #003865; }
+                    .cls-2 { fill: #fff; }
+                </style>
+            </defs>
+            <g id="Layer_2" data-name="Layer 2">
+                <g id="Layer_1-2" data-name="Layer 1">
+                    <path class="cls-1" d="M100.68.41a.52.52,0,0,0-.6.6V15.93a.54.54,0,0,0,.6.6h6.1c4.17,0,6.56-1.52,6.56-4.93a3.45,3.45,0,0,0-2.51-3.43,3.43,3.43,0,0,0,2-3.27c0-3.15-2.1-4.49-6.13-4.49Z" />
+                    <path class="cls-2" d="M104.09,4.26c0-.25.07-.35.34-.35h2c1.59,0,2.26.37,2.26,1.36s-.67,1.38-2.26,1.38h-2c-.27,0-.34-.09-.34-.34Z" />
+                    <path class="cls-2" d="M109.2,11.58c0,1-.74,1.45-2.42,1.45h-2.35c-.27,0-.34-.09-.34-.35V10.5c0-.28.07-.35.34-.35h2.35c1.64,0,2.42.42,2.42,1.43" />
+                    <path class="cls-1" d="M118.94,15.79l4-8.38L127,15.79c.27.58.5.74,1.08.74h2.95c.34,0,.53-.12.53-.35a1,1,0,0,0-.12-.39L124.09,1.17C123.63.28,123.4,0,123,0s-.62.28-1.06,1.17l-7.34,14.62a.93.93,0,0,0-.11.41c0,.21.16.33.5.33h2.81a1,1,0,0,0,1.11-.74" />
+                    <path class="cls-1" d="M141,1.06l-3.18,5.61-3.18-5.61a1,1,0,0,0-1.08-.65h-3.17c-.33,0-.49.1-.49.3a.69.69,0,0,0,.14.37l5.76,9.6v5.25a.53.53,0,0,0,.59.6h2.81c.44,0,.6-.21.6-.6V10.57l5.69-9.49a.66.66,0,0,0,.13-.37q0-.3-.48-.3h-3.06a1,1,0,0,0-1.08.65" />
+                    <path class="cls-1" d="M158.76,2.1a8.75,8.75,0,0,0-5.64-2C149.53.11,147,2,147,5.27c0,2.83,1.71,4.12,5.07,4.93,2.23.53,2.9.85,2.9,1.68s-.81,1.31-2.28,1.31a6.71,6.71,0,0,1-3.94-1.4.78.78,0,0,0-.44-.21.58.58,0,0,0-.46.34l-1.19,1.91a1,1,0,0,0-.19.51.76.76,0,0,0,.35.53,9.36,9.36,0,0,0,5.87,2c3.87,0,6.42-2,6.42-5.21,0-2.71-1.68-4.07-5.25-4.95-2-.48-2.71-.78-2.71-1.63s.76-1.29,2-1.29a6.07,6.07,0,0,1,3.66,1.38.82.82,0,0,0,.43.19c.16,0,.3-.12.44-.33l1.24-2a.69.69,0,0,0,.16-.45.57.57,0,0,0-.27-.46" />
+                    <path class="cls-1" d="M164.67,15.79l4-8.38,4.08,8.38c.27.58.5.74,1.08.74h2.95c.34,0,.53-.12.53-.35a1,1,0,0,0-.12-.39L169.83,1.17C169.37.28,169.14,0,168.77,0s-.62.28-1.06,1.17l-7.34,14.62a1,1,0,0,0-.12.41c0,.21.17.33.51.33h2.81a1,1,0,0,0,1.1-.74" />
+                    <path class="cls-1" d="M182.35,16.53c.44,0,.63-.16.63-.6V1c0-.43-.19-.6-.63-.6h-2.78a.52.52,0,0,0-.6.6V15.93a.54.54,0,0,0,.6.6Z" />
+                    <path class="cls-1" d="M189.54.41a1.07,1.07,0,0,0-1.13.63L183.6,7.83a.91.91,0,0,0-.23.55,1.1,1.1,0,0,0,.2.53l5,7a1.12,1.12,0,0,0,1.15.6H193c.3,0,.51-.12.51-.3a.53.53,0,0,0-.16-.37l-5.57-7.62,5.34-7.16a.66.66,0,0,0,.13-.34c0-.21-.16-.33-.48-.33Z" />
+                    <path class="cls-1" d="M3.38,16.79c.44,0,.63-.16.63-.6V11.45c0-.25.06-.34.34-.34H9.62c.44,0,.62-.16.62-.6V8c0-.43-.18-.62-.62-.62H4.35c-.28,0-.34-.07-.34-.34V4.71c0-.26.06-.35.34-.35H10.4c.44,0,.63-.16.63-.6V1.28a.55.55,0,0,0-.63-.6H.6c-.39,0-.6.16-.6.6V16.19a.54.54,0,0,0,.6.6Z" />
+                    <path class="cls-1" d="M20.46,17.09c4.42,0,7.44-2.48,7.44-7.25V1.28c0-.44-.18-.6-.62-.6H24.49c-.39,0-.6.16-.6.6V9.56c0,2.49-1.17,3.85-3.29,3.85s-3.27-1.36-3.27-3.85V1.28c0-.44-.18-.6-.62-.6H13.93c-.39,0-.6.16-.6.6V9.89c0,4.85,2.88,7.2,7.13,7.2" />
+                    <path class="cls-1" d="M34.62,16.79c.44,0,.62-.16.62-.6V4.52c0-.27.07-.34.35-.34H37c2.05,0,3.11.73,3.11,2.3s-1.24,2.35-3,2.55c-.3.05-.46.14-.46.3a1,1,0,0,0,.13.37l3.69,6.4a1.09,1.09,0,0,0,1.2.69h3c.39,0,.57-.11.57-.32a.67.67,0,0,0-.16-.41L41.55,10.3a4.37,4.37,0,0,0,2.72-4.21c0-3.68-2.35-5.41-7.16-5.41H31.84c-.4,0-.6.16-.6.6V16.19a.53.53,0,0,0,.6.6Z" />
+                    <path class="cls-1" d="M50.46,16.79c.44,0,.62-.16.62-.6V1.28c0-.44-.18-.6-.62-.6H47.67c-.39,0-.59.16-.59.6V16.19a.53.53,0,0,0,.59.6Z" />
+                    <path class="cls-1" d="M57.64.68a1.08,1.08,0,0,0-1.13.62L51.7,8.09a.93.93,0,0,0-.23.55,1,1,0,0,0,.21.53l5,7a1.1,1.1,0,0,0,1.15.6h3.34c.3,0,.5-.11.5-.3a.52.52,0,0,0-.16-.37L55.89,8.51l5.34-7.16A.72.72,0,0,0,61.37,1c0-.21-.16-.32-.48-.32Z" />
+                    <path class="cls-1" d="M66.06,16.06l4-8.38,4.08,8.38a1,1,0,0,0,1.08.73h3c.34,0,.53-.11.53-.34a.88.88,0,0,0-.12-.39L71.21,1.44C70.75.54,70.52.26,70.15.26s-.62.28-1.06,1.18L61.75,16.06a.88.88,0,0,0-.12.41c0,.21.17.32.51.32H65a1,1,0,0,0,1.11-.73" />
+                    <path class="cls-1" d="M91,.68c-.4,0-.6.16-.6.6V8.92L82.1,1.14c-.58-.55-.9-.76-1.2-.76s-.55.3-.55.9V16.19a.54.54,0,0,0,.6.6h2.78c.44,0,.62-.16.62-.6V8.55l8.29,7.78c.58.55.9.76,1.2.76s.55-.3.55-.9V1.28a.54.54,0,0,0-.62-.6Z" />
+                </g>
+            </g>
+        </svg>
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+    </div>
+    <style>
+        #loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; align-items: center; justify-content: center; z-index: 9999; flex-direction: column; }
+        #loading-screen svg { width: 220px; height: auto; }
+        .logo-wrapper { text-align: center; width: 80%; }
+        .progress-container { width: 350px; height: 8px; background-color: #eee; margin-top: 20px; border-radius: 4px; overflow: hidden; }
+        .progress-bar { height: 100%; width: 0%; background-color: #003865; transition: width 0.3s ease; }
+    </style>
+
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--if lt IE 9  script(src='https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js')  script(src='https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js')  -->
+    <!--min.js => jQuery v3.1.1, Bootstrap v3.3.7, owl.carousel, magnific-popup.min,  matchHeight.js-->
+
+
+    <script src="/d/TweenMax.min.js"></script>
+    <script src="/d/min.js?v=2"></script>
+    <script src="/d/fotorama.js"></script>
+    <script src="/d/jquery.fancybox.min.js"></script>
+    <script src="/d/xzoom/xzoom.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.1/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.1/ScrollTrigger.min.js"></script>
+
+    <script src="/d/SplitText.min.js"></script>
+
+
+
+    <script src="/d/jquery.event.move.js"></script>
+    <script src="/d/post.js"></script>
+    <script src="/d/j.js?v=142"></script>
+    <script>
+        $(document).ready(function () {
+
+            rollingText();
+            const currentLang = 'tr';
+            const languageLinks = document.querySelectorAll('.diller a');
+            languageLinks.forEach(link => {
+                if (link.getAttribute('data-kod') === currentLang) {
+                    link.classList.add('active');
+                } else {
+                    link.classList.remove('active');
+                }
+            });
+
+            var popResim = 'yok';
+            var popupUrl = 'yok';
+            if (popResim == "yok") return;
+            $("body").append("<div id='zzz'>" +
+                "<a href='javascript:;' onclick='$(\"#zzz\").fadeIn().remove();' class='kapat99'>&times;</a>" +
+                "<img src='/d/r/" + popResim + "'/>" +
+                "</div>");
+            $("#zzz").addClass("popup99");
+
+        })
+    </script>
+    <script src="/d/aos.js"></script>
+    <script>
+
+        AOS.init();
+        window.addEventListener('load', function () {
+            AOS.refresh();
+
+        });
+
+        document.onreadystatechange = function () {
+            if (document.readyState === 'interactive') {
+                updateProgress(100);
+                // Biraz gecikmeli gizleyelim (örneğin 500ms sonra)
+                setTimeout(() => {
+                    document.getElementById('loading-screen').style.display = 'none';
+                }, 2000);
+            } 
+        };
+
+        function updateProgress(value) {
+            const progressBar = document.getElementById('progress-bar');
+            progressBar.style.width = value + '%';
+        }
+
+
+        gsap.utils.toArray(".parallax-img").forEach(img => {
+            gsap.to(img, {
+                y: -400,
+                ease: "none",
+                scrollTrigger: {
+                    trigger: img.closest(".parallax-container"), // her img kendi container'ına göre tetiklenir
+                    start: "top bottom",
+                    end: "bottom top",
+                    scrub: true
+                }
+            });
+        });
+
+        gsap.utils.toArray(".parallax-imgmobil").forEach(img => {
+            gsap.to(img, {
+                y: -200,
+                ease: "none",
+                scrollTrigger: {
+                    trigger: img.closest(".parallax-containermobil"), // her img kendi container'ına göre tetiklenir
+                    start: "top bottom",
+                    end: "bottom top",
+                    scrub: true
+                }
+            });
+        });
+        /************/
+        gsap.utils.toArray(".parallax-img2").forEach(img => {
+            gsap.to(img, {
+                y: -300,
+                ease: "none",
+                scrollTrigger: {
+                    trigger: img.closest(".parallax-container2"), // her img kendi container'ına göre tetiklenir
+                    start: "top bottom",
+                    end: "bottom top",
+                    scrub: true
+                }
+            });
+        });
+        /************/
+        gsap.utils.toArray(".parallax-img3").forEach(img => {
+            gsap.to(img, {
+                y: -150,
+                ease: "none",
+                scrollTrigger: {
+                    trigger: img.closest(".parallax-container3"), // her img kendi container'ına göre tetiklenir
+                    start: "top bottom",
+                    end: "bottom top",
+                    scrub: true
+                }
+            });
+        });
+        /************/
+
+
+        gsap.registerPlugin(ScrollTrigger, SplitText);
+        if (typeof anasayfa != "undefined") {
+
+            var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+            if (isMobile)
+                animateText("#anaHakkimizda .aciklama", "#anaHakkimizda");
+                else
+                animateText("#anaHakkimizda .aciklama", "#anaHakkimizda .aciklama");
+
+
+            /*************/
+            const cards = gsap.utils.toArray(".card");
+            const spacer = 200;
+            const minScale = 1;
+
+
+            cards.forEach((card, index) => {
+                const figure = card.querySelector('figure');
+                const metin = card.querySelector('.metin');
+
+                if (figure) {
+                    ScrollTrigger.create({
+                        trigger: figure, // <<< sadece figure pinlenecek
+                        start: `top-=30 top`,
+                        endTrigger: '.cards',
+                        end: `bottom top-=${200 + (cards.length * spacer)}`,
+                        pin: true,
+                        pinSpacing: false,
+                        markers: false,
+                        id: 'pin',
+                        invalidateOnRefresh: true,
+                    });
+                }
+
+                if (metin) {
+                    ScrollTrigger.create({
+                        trigger: metin,
+                        start: `top-=30 top`,
+                        endTrigger: '.cards',
+                        end: `bottom top`,
+                        pin: true,
+                        pinSpacing: false,
+                        markers: false,
+                        id: 'pin-metin-' + index,
+                        invalidateOnRefresh: true,
+                    });
+                }
+            });
+
+            // animateSliderLines("#products .title p");
+            // $("#products .cards .metin").each(function () {
+            //     animateSliderLines(this, 1);
+            // });
+
+
+
+            gsap.to("#merakEdilenler .inner", {
+                scrollTrigger: {
+                    trigger: "#merakEdilenler .inner",
+                    start: "top 40%",   // <<< biraz geç başlasın diye 80% verdik
+                    end: "bottom 20%",  // <<< biraz geç bitsin
+                    scrub: true
+                },
+                borderRadius: "54px",
+                scale: 0.9,
+                transformOrigin: "50% 100%",
+                opacity: 1,
+                filter: "blur(0px)",
+                marginTop: "60px",
+                marginBottom: "60px",
+                ease: "none"
+            });
+        }
+
+
+        function animateSliderLines(triggerElement, delay = 0) {
+            const sliderLines = new SplitText(triggerElement, {
+                type: "lines",
+                linesClass: "text-lines"
+            });
+
+            sliderLines.lines.forEach((line) => {
+                const wrapper = document.createElement("div");
+                wrapper.classList.add("line-wrapper");
+                line.parentNode.insertBefore(wrapper, line);
+                wrapper.appendChild(line);
+            });
+
+            const tl = gsap.timeline({
+                scrollTrigger: {
+                    trigger: triggerElement,
+                    start: "top 100%",
+                    end: "bottom top",
+                    scrub: true,
+                    // once: true,
+                }
+            });
+
+            tl.fromTo(sliderLines.lines,
+                {
+                    opacity: 0,
+                    y: 50,
+                },
+                {
+                    opacity: 1,
+                    y: 0,
+                    duration: 1,
+                    ease: "power2.out",
+                    stagger: 0.2,
+                    delay: delay
+                }
+            );
+        }
+
+        function rollingText() {
+            let elements = document.querySelectorAll(".rolling-text");
+
+            elements.forEach((element) => {
+                let innerText = element.innerText;
+                element.innerHTML = "";
+
+                let textContainer = document.createElement("div");
+                textContainer.classList.add("block");
+
+                for (let letter of innerText) {
+                    let span = document.createElement("span");
+                    span.innerText = letter.trim() === "" ? "\xa0" : letter;
+                    span.classList.add("letter");
+                    textContainer.appendChild(span);
+                }
+
+                element.appendChild(textContainer);
+                element.appendChild(textContainer.cloneNode(true));
+            });
+
+            elements.forEach((element) => {
+                element.addEventListener("mouseover", () => {
+                    element.classList.remove("play");
+                });
+            });
+        };
+
+        function animateText(textElement, triggerElement) {
+            var splitText = new SplitText(textElement, { type: "words" });
+
+            gsap.set(splitText.words, {
+                y: 60,
+                opacity: 0
+            });
+
+            gsap.to(splitText.words,
+                {
+                    y: 0,
+                    opacity: 1,
+                    scrollTrigger: {
+                        trigger: triggerElement,
+                        start: "top-=90%",
+                        end: "top-=20%",
+                        scrub: true, once: true
+                    },
+                    duration: 0.8,
+                    stagger: 0.015,
+                    ease: "60fps.inOut"
+                }
+            );
+        }
+
+    </script>
+
+</body>
+</html>

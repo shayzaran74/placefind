@@ -460,6 +460,102 @@ async function run(): Promise<void> {
     ExporterService.venueToObject(pinless as any).location === null
   );
 
+  // -------------------------------------------- price-free product catalogue
+  section('6b. Catalogue extraction (a site that publishes no prices)');
+
+  // Fixtures: a patisserie chain's own website. It lists every product with a
+  // photo and a description but prints no price anywhere, so the price-anchored
+  // extractor found nothing to climb from and the whole site yielded 0 items.
+  const catalogHomePath = path.join(__dirname, 'fixtures/catalog-home.html');
+  const catalogSectionPath = path.join(__dirname, 'fixtures/catalog-section.html');
+
+  if (fs.existsSync(catalogHomePath) && fs.existsSync(catalogSectionPath)) {
+    const catalogHome = 'https://www.furkanbaysak.com.tr/';
+    const catalogSection = 'https://www.furkanbaysak.com.tr/yas-pastalar';
+    const $catalogHome = cheerio.load(fs.readFileSync(catalogHomePath, 'utf8'));
+    const $catalogSection = cheerio.load(fs.readFileSync(catalogSectionPath, 'utf8'));
+
+    const priced: any[] = (ScraperService as any).extractFromDom($catalogSection, catalogSection);
+    check(
+      'the price-anchored pass finds nothing (why the catalogue pass exists)',
+      priced.length === 0,
+      `${priced.length} kategori`
+    );
+
+    const sections = MenuCrawlerService.discoverSectionUrls($catalogHome, catalogHome, 20);
+    check('discovers every product section', sections.length === 6, `${sections.length}/6 bölüm`);
+
+    // The URLs the crawler is already fetching, exactly as scrapeAndExtractMenu
+    // builds the set.
+    const crawled = new Set(
+      [catalogHome, ...sections.map((s) => s.url)]
+        .map((url) => MenuCrawlerService.normalize(url, url))
+        .filter((url): url is string => url !== null)
+    );
+
+    const catalog: any[] = (ScraperService as any).extractCatalog(
+      $catalogSection,
+      catalogSection,
+      crawled
+    );
+    const products = catalog.flatMap((c) => c.items);
+
+    check('the catalogue pass recovers the products', products.length === 10, `${products.length}/10 ürün`);
+    check('the page heading names the category', catalog[0]?.name === 'Yaş Pastalar', catalog[0]?.name);
+    check(
+      'the product link names the product, not its button',
+      products.some((i: any) => i.name === 'Meyveli Yaş Pasta') &&
+        !products.some((i: any) => /^[iİ]ncele$/i.test(i.name)),
+      products.map((i: any) => i.name).slice(0, 3).join(', ')
+    );
+    check(
+      'every product keeps its photo',
+      products.every((i: any) => i.original_image_url?.startsWith('https://')),
+      String(products.filter((i: any) => !i.original_image_url).length) + ' görselsiz'
+    );
+    check(
+      'every product keeps its description',
+      products.every((i: any) => i.description && i.description.length > 20),
+      String(products.filter((i: any) => !i.description).length) + ' açıklamasız'
+    );
+    check(
+      'an unpriced product is 0, never an invented figure',
+      products.every((i: any) => i.price === 0),
+      products.map((i: any) => i.price).join(',')
+    );
+
+    // The landing page links at the six section pages the crawler already
+    // fetches. Reporting them as products would duplicate every section.
+    const homeCatalog: any[] = (ScraperService as any).extractCatalog(
+      $catalogHome,
+      catalogHome,
+      crawled
+    );
+    check(
+      'a category grid does not report its sections as products',
+      homeCatalog.flatMap((c) => c.items).length === 0,
+      homeCatalog.flatMap((c) => c.items).map((i: any) => i.name).join(', ')
+    );
+
+    // Navigation links share a directory too; only a grid of tiles with their
+    // own artwork is a catalogue.
+    const navOnly = cheerio.load(`
+      <body><nav><ul>
+        <li><a href="/kurumsal/hakkimizda">Hakkımızda</a></li>
+        <li><a href="/kurumsal/kariyer">Kariyer</a></li>
+        <li><a href="/kurumsal/iletisim">İletişim</a></li>
+        <li><a href="/kurumsal/franchise">Franchise</a></li>
+      </ul></nav></body>`);
+    const navCatalog: any[] = (ScraperService as any).extractCatalog(navOnly, 'https://x.test/');
+    check(
+      'a footer menu is not mistaken for a product grid',
+      navCatalog.length === 0,
+      navCatalog.flatMap((c) => c.items).map((i: any) => i.name).join(', ')
+    );
+  } else {
+    check('catalogue fixtures present', false, 'tests/fixtures/catalog-*.html eksik');
+  }
+
   // ------------------------------------------------------- webp pipeline
   section('7. WebP image pipeline');
   const sharp = (await import('sharp')).default;

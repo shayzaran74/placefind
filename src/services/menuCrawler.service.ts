@@ -251,6 +251,12 @@ export class MenuCrawlerService {
     if (!config.menuCrawlRespectRobots) return true;
     try {
       const parsed = new URL(url);
+      const host = parsed.hostname.toLowerCase();
+      const isBypassed = config.menuCrawlBypassRobotsDomains.some(
+        (domain) => host === domain || host.endsWith(`.${domain}`)
+      );
+      if (isBypassed) return true;
+
       const rules = await this.robotRules(parsed.origin);
       return this.isAllowed(rules, parsed.pathname);
     } catch {

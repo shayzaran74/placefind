@@ -91,7 +91,7 @@ export class EnrichmentService {
       scan.qr_menu_url || details.website,
       // Only mock venues may fall back to the sample menu.
       source === 'mock',
-      { maxPages: options.maxMenuPages }
+      { maxPages: options.maxMenuPages, instagramUrl: scan.social_media.instagram }
     );
     if (menu.warning) warnings.push(`menu: ${menu.warning}`);
 

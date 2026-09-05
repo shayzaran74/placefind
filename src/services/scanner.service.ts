@@ -39,6 +39,8 @@ interface IProviderRule {
 export class ScannerService {
   /** QR menu platforms, TR market first. */
   private static knownQrProviders: IProviderRule[] = [
+    { name: 'Akınsoft', pattern: /akinsoft\.com\.tr|qrmenuapp\.akinsoft/i },
+    { name: 'KarekodApp', pattern: /karekodapp\.com\.tr/i },
     { name: 'QrMatic', pattern: /qrmatic\.link|qrmatic\.com/i },
     { name: 'FineDine', pattern: /finedine(?:menu)?\.(?:co|com)|finedinemenu/i },
     { name: 'Menulux', pattern: /menulux\.(?:com|net)/i },
@@ -157,6 +159,30 @@ export class ScannerService {
     }
   }
 
+  public static cleanExtractedUrl(rawUrl: string): string {
+    let text = rawUrl.replace(/\\/g, '');
+
+    // Handle Instagram redirect links: https://l.instagram.com/?u=...
+    if (text.includes('instagram.com') && text.includes('u=')) {
+      try {
+        const parsed = new URL(text);
+        const target = parsed.searchParams.get('u');
+        if (target) text = target;
+      } catch {}
+    }
+
+    // Unescape unicode percent encodings (e.g. u00253A -> %3A -> :)
+    text = text.replace(/u0025/gi, '%').replace(/u002f/gi, '/');
+    try {
+      text = decodeURIComponent(text);
+    } catch {}
+    try {
+      text = decodeURIComponent(text);
+    } catch {}
+
+    return text.trim();
+  }
+
   /**
    * Scans a venue website for contacts, social profiles, QR menu platform and
    * online ordering integrations. On failure it reports the error and returns
@@ -248,11 +274,48 @@ export class ScannerService {
             return false;
           }
         });
-      // No outbound link with a real path means the platform signature came
-      // from this page's own footer: the platform published the page we are
-      // standing on, so the page itself is the menu.
-      qrUrl = link ? this.resolveUrl(link, baseUrl) : provider.generic ? undefined : baseUrl;
-      break;
+      let extractedUrl: string | undefined = link ? this.resolveUrl(link, baseUrl) : undefined;
+      if (!extractedUrl) {
+        const matches = html.match(
+          new RegExp(`https?:\\\\?\\/\\\\?\\/[^"'\\s<>]*(?:${provider.pattern.source})[^"'\\s<>]*`, 'gi')
+        );
+        if (matches && matches.length) {
+          const cleaned = this.cleanExtractedUrl(matches[0]);
+          try {
+            const parsed = new URL(cleaned);
+            if (parsed.pathname.length > 1 || Boolean(parsed.search)) {
+              extractedUrl = cleaned;
+            }
+          } catch {}
+        }
+      }
+
+      qrUrl = extractedUrl ? this.cleanExtractedUrl(extractedUrl) : provider.generic ? undefined : selfHosted ? baseUrl : undefined;
+      if (qrUrl) break;
+    }
+
+    // Raw URL match fallback in scripts/text for social profiles (Instagram bio links, Linktree, etc.)
+    if (!qrUrl) {
+      for (const provider of this.knownQrProviders) {
+        if (provider.generic) continue;
+        const matches = html.match(
+          new RegExp(`https?:\\\\?\\/\\\\?\\/[^"'\\s<>]*(?:${provider.pattern.source})[^"'\\s<>]*`, 'gi')
+        );
+        if (matches && matches.length) {
+          const rawUrl = matches[0].replace(/\\/g, '');
+          try {
+            const parsed = new URL(rawUrl);
+            if (parsed.pathname.length > 1 || Boolean(parsed.search)) {
+              hasQrMenu = true;
+              qrProvider = provider.name;
+              qrUrl = rawUrl;
+              break;
+            }
+          } catch {
+            // invalid url
+          }
+        }
+      }
     }
 
     // Self-hosted menu page (e.g. /menu, /menu.html) still counts as a digital menu.
