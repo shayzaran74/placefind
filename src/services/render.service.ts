@@ -122,20 +122,27 @@ export class RenderService {
             .catch(() => undefined);
         }
 
-        // Playwright sayfa kaydırma ve lazy load yükletme
+        // Playwright sayfa kaydırma ve lazy load / sonsuz kaydırma yükletme
         await page
           .evaluate(async () => {
+            document.querySelectorAll('div[role="dialog"], div[class*="login"], div[class*="modal"]').forEach((el) => el.remove());
+            if (document.body) document.body.style.overflow = 'auto';
+
             await new Promise<void>((resolve) => {
               let totalHeight = 0;
-              const distance = 400;
+              const distance = 600;
+              let passes = 0;
               const timer = setInterval(() => {
                 window.scrollBy(0, distance);
                 totalHeight += distance;
-                if (totalHeight >= document.body.scrollHeight) {
+                document.querySelectorAll('div[role="dialog"], div[class*="login"], div[class*="modal"]').forEach((el) => el.remove());
+                if (document.body) document.body.style.overflow = 'auto';
+                passes++;
+                if (passes >= 15 || totalHeight >= (document.body?.scrollHeight || 10000)) {
                   clearInterval(timer);
                   resolve();
                 }
-              }, 150);
+              }, 200);
             });
           })
           .catch(() => undefined);
