@@ -36,13 +36,57 @@ export class ImageService {
   }
 
   /**
+   * Optimizes CDN image URLs (Yemeksepeti / Delivery Hero, Cloudinary, Next.js, etc.)
+   * by removing or upgrading low-resolution / thumbnail transformation parameters.
+   */
+  public static optimizeUrl(imageUrl: string): string {
+    if (!imageUrl || typeof imageUrl !== 'string') return imageUrl;
+
+    let optimized = imageUrl.trim();
+
+    // Next.js _next/image wrapper: extract original target URL if present
+    if (optimized.includes('_next/image') && optimized.includes('url=')) {
+      try {
+        const parsed = new URL(optimized);
+        const innerUrl = parsed.searchParams.get('url');
+        if (innerUrl) {
+          optimized = decodeURIComponent(innerUrl);
+        }
+      } catch {
+        // Fall back to original URL
+      }
+    }
+
+    // Delivery Hero / Yemeksepeti CDN (images.deliveryhero.io, fd-tr, etc.)
+    // Upgrade query parameters: width -> 800, height -> 800, quality -> 90
+    if (/deliveryhero|yemeksepeti|foodpanda|pedidosya/i.test(optimized) || optimized.includes('images.deliveryhero.io')) {
+      optimized = optimized
+        .replace(/([?&])width=\d+/gi, '$1width=800')
+        .replace(/([?&])height=\d+/gi, '$1height=800')
+        .replace(/([?&])quality=\d+/gi, '$1quality=90');
+    } else {
+      // General width/height/quality query param upgrades for common CDNs (Cloudinary, Imgix, etc.)
+      optimized = optimized
+        .replace(/([?&])(w|width)=\d+/gi, '$1$2=800')
+        .replace(/([?&])(h|height)=\d+/gi, '$1$2=800')
+        .replace(/([?&])(q|quality)=\d+/gi, '$1$2=90');
+    }
+
+    // Cloudinary / Delivery Hero path transformations e.g. /w_100,h_100,q_30/ or /w_150/
+    optimized = optimized.replace(/\/w_\d+(?:,h_\d+)?(?:,q_\d+)?\//gi, '/w_800,h_800,q_90/');
+
+    return optimized;
+  }
+
+  /**
    * Downloads an image, converts it to WebP and stores it under a unique hash
    * name (`img_<hash>.webp`). Returns conversion telemetry alongside the URL.
    */
   public static async convert(imageUrl: string, prefix = 'img'): Promise<IWebPResult> {
     this.ensureUploadsDirExists();
 
-    const urlHash = crypto.createHash('md5').update(imageUrl).digest('hex');
+    const targetUrl = this.optimizeUrl(imageUrl);
+    const urlHash = crypto.createHash('md5').update(targetUrl).digest('hex');
     const filename = `${prefix}_${urlHash}.webp`;
     const outputPath = path.join(config.uploadsDir, filename);
 
@@ -61,7 +105,7 @@ export class ImageService {
         };
       }
 
-      const response = await axios.get(imageUrl, {
+      const response = await axios.get(targetUrl, {
         responseType: 'arraybuffer',
         timeout: 15000,
         maxContentLength: 25 * 1024 * 1024,

@@ -579,6 +579,16 @@ async function run(): Promise<void> {
   check('storage stats readable', stats.file_count >= 1, `${stats.file_count} files, ${stats.total_bytes} B`);
   check('publicUrl builds a path', ImageService.publicUrl('a.webp').endsWith('/uploads/images/a.webp'));
 
+  // Test Yemeksepeti / Delivery Hero CDN URL optimization
+  const lowResUrl = 'https://images.deliveryhero.io/image/fd-tr/Products/123.jpg?width=120&height=120&quality=40';
+  const optimizedUrl = ImageService.optimizeUrl(lowResUrl);
+  check('ImageService.optimizeUrl upgrades low-res CDN params', optimizedUrl.includes('width=800') && optimizedUrl.includes('quality=90'), optimizedUrl);
+
+  // Test srcset extraction
+  const $dummyHtml = cheerio.load('<div id="test"><img src="small.jpg?width=100" srcset="small.jpg?width=100 100w, large.jpg?width=1000 1000w" /></div>');
+  const extractedSrc = ScraperService.extractImageFromElement($dummyHtml('#test'), 'https://www.yemeksepeti.com');
+  check('ScraperService extracts highest resolution from srcset', Boolean(extractedSrc && extractedSrc.includes('large.jpg')), extractedSrc);
+
   fs.unlinkSync(pngPath);
   fs.unlinkSync(webpPath);
 

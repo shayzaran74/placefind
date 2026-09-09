@@ -106,13 +106,16 @@ export class ScraperService {
           const offer = Array.isArray(entry.offers) ? entry.offers[0] : entry.offers;
           const price = offer?.price !== undefined ? this.parsePrice(String(offer.price)) : null;
 
+          const rawImage = typeof entry.image === 'string' ? entry.image : entry.image?.url;
+          const image = rawImage ? ImageService.optimizeUrl(rawImage) : undefined;
+
           items.push({
             item_id: this.slug(entry.name, 'item'),
             name: String(entry.name).trim(),
             description: entry.description ? String(entry.description).trim() : undefined,
             price: price ?? 0,
             currency: offer?.priceCurrency || 'TRY',
-            original_image_url: typeof entry.image === 'string' ? entry.image : entry.image?.url,
+            original_image_url: image,
             is_available: true,
           });
         }
@@ -162,6 +165,85 @@ export class ScraperService {
     });
 
     return categories;
+  }
+
+  /**
+   * Extracts the highest-resolution image URL from a DOM element, checking srcset,
+   * data-srcset, data-src, data-original, data-lazy-src, data-high-res, CSS background-image,
+   * and optimizing low-res CDN thumbnail parameters via ImageService.optimizeUrl.
+   */
+  public static extractImageFromElement($el: cheerio.Cheerio<any>, baseUrl: string): string | undefined {
+    let rawSrc: string | undefined;
+
+    // 1. Check img element or child img for srcset / high-res candidates
+    const imgNode = $el.is('img') ? $el : $el.find('img').first();
+    if (imgNode.length) {
+      const srcset = imgNode.attr('srcset') || imgNode.attr('data-srcset');
+      if (srcset) {
+        const candidates = srcset.split(',').map((entry) => {
+          const parts = entry.trim().split(/\s+/);
+          const url = parts[0];
+          const descriptor = parts[1] || '';
+          let width = 0;
+          if (descriptor.endsWith('w')) {
+            width = parseInt(descriptor.replace('w', ''), 10) || 0;
+          } else if (descriptor.endsWith('x')) {
+            width = (parseFloat(descriptor.replace('x', '')) || 1) * 500;
+          }
+          return { url, width };
+        });
+        candidates.sort((a, b) => b.width - a.width);
+        if (candidates.length > 0 && candidates[0].url) {
+          rawSrc = candidates[0].url;
+        }
+      }
+
+      if (!rawSrc) {
+        rawSrc =
+          imgNode.attr('data-src') ||
+          imgNode.attr('data-original') ||
+          imgNode.attr('data-lazy-src') ||
+          imgNode.attr('data-high-res') ||
+          imgNode.attr('src');
+      }
+    }
+
+    // 2. Check container attributes or style background-image if no img src found
+    if (!rawSrc) {
+      const photoContainer = $el.is('[class*="photo"], [class*="image"], [class*="img"]')
+        ? $el
+        : $el.find('[class*="product-photo"], [class*="photo"], [class*="image"], [class*="img"]').first();
+
+      if (photoContainer.length) {
+        rawSrc =
+          photoContainer.attr('data-src') ||
+          photoContainer.attr('data-bg') ||
+          photoContainer.attr('data-original');
+        if (!rawSrc) {
+          const style = photoContainer.attr('style') || '';
+          const bgMatch = style.match(/url\((['"]?)([^'")]+)\1\)/i);
+          if (bgMatch) rawSrc = bgMatch[2];
+        }
+      }
+    }
+
+    // 3. CSS background-image fallback on element or its children
+    if (!rawSrc) {
+      const style = $el.attr('style') || '';
+      const bgMatch = style.match(/url\((['"]?)([^'")]+)\1\)/i);
+      if (bgMatch && !bgMatch[2].includes('cover-photo') && !bgMatch[2].includes('favicon')) {
+        rawSrc = bgMatch[2];
+      }
+    }
+
+    if (!rawSrc || rawSrc.startsWith('data:')) return undefined;
+
+    try {
+      const absoluteUrl = new URL(rawSrc, baseUrl).toString();
+      return ImageService.optimizeUrl(absoluteUrl);
+    } catch {
+      return undefined;
+    }
   }
 
   /**
@@ -516,21 +598,7 @@ export class ScraperService {
         allergens.push(value);
       });
 
-      const img = candidate.scope.find('img').first();
-      // Resim URL'ini çekerken: data-src -> data-original -> data-lazy-src -> src fallback
-      const src =
-        img.attr('data-src') ||
-        img.attr('data-original') ||
-        img.attr('data-lazy-src') ||
-        img.attr('src');
-      let image: string | undefined;
-      if (src && !src.startsWith('data:')) {
-        try {
-          image = new URL(src, baseUrl).toString();
-        } catch {
-          image = undefined;
-        }
-      }
+      const image = this.extractImageFromElement(candidate.scope, baseUrl);
 
       const categoryName = categoryFor(candidate.pos).slice(0, 80) || 'Menü';
       let category = categories.find((c) => c.name === categoryName);
@@ -608,52 +676,7 @@ export class ScraperService {
         const descEl = card.find('[class*="desc"], [class*="aciklama"], p').first();
         const description = descEl.length ? descEl.text().replace(/\s+/g, ' ').trim() : undefined;
 
-        // 1. Look for img tag
-        const img = card.find('img').first();
-        let rawSrc =
-          img.attr('data-src') ||
-          img.attr('data-original') ||
-          img.attr('data-lazy-src') ||
-          img.attr('src');
-
-        // 2. Look for photo container with data-src or CSS background-image
-        if (!rawSrc) {
-          const photoContainer = card
-            .find('[class*="product-photo"], [class*="photo"], [class*="image"], [class*="img"]')
-            .first();
-          if (photoContainer.length) {
-            rawSrc =
-              photoContainer.attr('data-src') ||
-              photoContainer.attr('data-bg') ||
-              photoContainer.attr('data-original');
-            if (!rawSrc) {
-              const style = photoContainer.attr('style') || '';
-              const bgMatch = style.match(/url\((['"]?)([^'")]+)\1\)/i);
-              if (bgMatch) rawSrc = bgMatch[2];
-            }
-          }
-        }
-
-        // 3. Check CSS background-image on card or its children
-        if (!rawSrc) {
-          card.find('*').addBack().each((_, el) => {
-            const style = $(el).attr('style') || '';
-            const bgMatch = style.match(/url\((['"]?)([^'")]+)\1\)/i);
-            if (bgMatch && !bgMatch[2].includes('cover-photo') && !bgMatch[2].includes('favicon')) {
-              rawSrc = bgMatch[2];
-              return false;
-            }
-          });
-        }
-
-        let image: string | undefined;
-        if (rawSrc && !rawSrc.startsWith('data:')) {
-          try {
-            image = new URL(rawSrc, baseUrl).toString();
-          } catch {
-            image = undefined;
-          }
-        }
+        const image = this.extractImageFromElement(card, baseUrl);
 
         let category = categories.find((c) => c.name === currentCategoryName);
         if (!category) {
@@ -885,20 +908,7 @@ export class ScraperService {
         .map((el) => $(el).text().replace(/\s+/g, ' ').trim())
         .find((text) => text && text !== product.name && text.length > 2);
 
-      const img = product.tile.find('img').first();
-      const src =
-        img.attr('data-src') ||
-        img.attr('data-original') ||
-        img.attr('data-lazy-src') ||
-        img.attr('src');
-      let image: string | undefined;
-      if (src && !src.startsWith('data:')) {
-        try {
-          image = new URL(src, baseUrl).toString();
-        } catch {
-          image = undefined;
-        }
-      }
+      const image = this.extractImageFromElement(product.tile, baseUrl);
 
       const categoryName = categoryFor(product.pos).slice(0, 80) || 'Menü';
       let category = categories.find((c) => c.name === categoryName);
