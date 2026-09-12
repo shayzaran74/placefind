@@ -556,6 +556,101 @@ async function run(): Promise<void> {
     check('catalogue fixtures present', false, 'tests/fixtures/catalog-*.html eksik');
   }
 
+  // ------------------------------------------------ Next.js & Yemeksepeti scraper
+  section('6c. Next.js __NEXT_DATA__ & Yemeksepeti scraper');
+
+  const nextDataHtml = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <script id="__NEXT_DATA__" type="application/json">
+        {
+          "props": {
+            "pageProps": {
+              "bentoData": {
+                "categories": [
+                  {
+                    "name": "Sıcak Kahveler",
+                    "products": [
+                      {
+                        "name": "Filtre Kahve",
+                        "description": "Taze demlenmiş espresso filtre kahve.",
+                        "price": 85.0,
+                        "fileUrl": "https://images.deliveryhero.io/image/fd-tr/Products/filter.jpg?width=100"
+                      },
+                      {
+                        "name": "Caffe Latte",
+                        "description": "Espresso ve sıcak süt.",
+                        "price": 105.0,
+                        "fileUrl": "https://images.deliveryhero.io/image/fd-tr/Products/latte.jpg?width=100"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+        </script>
+      </head>
+      <body><h1>Arabica Coffee House</h1></body>
+    </html>
+  `;
+  const $next = cheerio.load(nextDataHtml);
+  const nextCategories = (ScraperService as any).extractFromNextData($next, 'https://www.yemeksepeti.com/restaurant/nxir/arabica-coffee-house-nxir');
+  check('extractFromNextData parses __NEXT_DATA__ categories', nextCategories.length === 1, `${nextCategories.length} category`);
+  check('extractFromNextData parses product details & prices', nextCategories[0]?.items.length === 2 && nextCategories[0].items[0].price === 85, nextCategories[0]?.items[0]?.name);
+  check('extractFromNextData upgrades DeliveryHero image URLs', Boolean(nextCategories[0]?.items[0]?.original_image_url?.includes('width=800')), nextCategories[0]?.items[0]?.original_image_url);
+
+  const capturedApiHtml = `
+    <!DOCTYPE html>
+    <html>
+      <body>
+        <script class="pf-captured-api" type="application/json">
+        {
+          "data": {
+            "vendor": {
+              "menu": {
+                "categories": [
+                  {
+                    "name": "Soğuk İçecekler",
+                    "items": [
+                      {
+                        "title": "Iced Latte",
+                        "price": 115.0,
+                        "imageUrl": "https://images.deliveryhero.io/image/fd-tr/Products/icedlatte.jpg"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+        </script>
+      </body>
+    </html>
+  `;
+  const $api = cheerio.load(capturedApiHtml);
+  const apiCategories = (ScraperService as any).extractFromNextData($api, 'https://www.yemeksepeti.com');
+  check('extractFromNextData parses captured API response', apiCategories.length === 1 && apiCategories[0].items[0].name === 'Iced Latte', apiCategories[0]?.items[0]?.name);
+
+  const yemeksepetiDomHtml = `
+    <div data-qa="vendor-menu">
+      <section data-qa="menu-category">
+        <h2 data-qa="category-title">Tatlılar</h2>
+        <div data-qa="product-card">
+          <h3 data-qa="product-title">Cheesecake</h3>
+          <span data-qa="product-price">140,00 TL</span>
+          <p data-qa="product-description">Limonlu taze cheesecake.</p>
+        </div>
+      </section>
+    </div>
+  `;
+  const $ys = cheerio.load(yemeksepetiDomHtml);
+  const ysCategories = (ScraperService as any).extractFromYemeksepeti($ys, 'https://www.yemeksepeti.com');
+  check('extractFromYemeksepeti parses Yemeksepeti DOM structure', ysCategories.length === 1 && ysCategories[0].items[0].name === 'Cheesecake' && ysCategories[0].items[0].price === 140, ysCategories[0]?.items[0]?.name);
+
   // ------------------------------------------------------- webp pipeline
   section('7. WebP image pipeline');
   const sharp = (await import('sharp')).default;

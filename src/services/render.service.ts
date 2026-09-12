@@ -92,8 +92,54 @@ export class RenderService {
     if (browser) {
       let context: any;
       try {
-        context = await browser.newContext({ userAgent: USER_AGENT, locale: 'tr-TR' });
+        context = await browser.newContext({
+          userAgent: USER_AGENT,
+          locale: 'tr-TR',
+          viewport: { width: 1366, height: 768 },
+          extraHTTPHeaders: {
+            'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
+            'sec-ch-ua': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"macOS"',
+            'sec-fetch-dest': 'document',
+            'sec-fetch-mode': 'navigate',
+            'sec-fetch-site': 'none',
+            'sec-fetch-user': '?1',
+            'upgrade-insecure-requests': '1',
+          },
+        });
+
+        await context.addInitScript(() => {
+          try {
+            Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+          } catch {}
+        });
+
         const page = await context.newPage();
+        const capturedApiPayloads: string[] = [];
+
+        page.on('response', async (res: any) => {
+          try {
+            const resUrl = res.url();
+            const contentType = res.headers()['content-type'] || '';
+            if (
+              (resUrl.includes('/graphql') ||
+                resUrl.includes('/api/') ||
+                resUrl.includes('/vendors/') ||
+                resUrl.includes('/bento') ||
+                resUrl.includes('/menu') ||
+                resUrl.includes('/catalog') ||
+                resUrl.includes('/products')) &&
+              contentType.includes('json')
+            ) {
+              const text = await res.text().catch(() => '');
+              if (text && text.length > 50 && text.length < 5000000) {
+                capturedApiPayloads.push(text);
+              }
+            }
+          } catch {}
+        });
+
         // 'commit' returns as soon as the response lands. Waiting for
         // DOMContentLoaded *inside* goto makes the render hostage to a single
         // stalled subresource: one blocking script that never returns throws
@@ -148,7 +194,14 @@ export class RenderService {
           .catch(() => undefined);
         await page.waitForTimeout(1500).catch(() => undefined); // Resimlerin yüklenmesini bekle
 
-        const html = await page.content();
+        let html = await page.content();
+        if (capturedApiPayloads.length > 0) {
+          const apiScripts = capturedApiPayloads
+            .map((payload) => `<script class="pf-captured-api" type="application/json">${payload}</script>`)
+            .join('\n');
+          html += `\n${apiScripts}`;
+        }
+
         return { html, url: page.url(), method: 'playwright', status: response?.status() };
       } catch (error: any) {
         console.warn(`[RenderService] Playwright render failed for ${url}: ${error.message}`);

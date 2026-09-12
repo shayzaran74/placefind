@@ -275,6 +275,7 @@ export class ScraperService {
     const nutritionLabelRe =
       /^(kalori|calories?|ya[ğg]|fat|prote[iı]n|karbonhidrat|carb\w*|sodyum|sodium|tuz|salt|lif|fiber|[şs]eker|sugar|alerjen(\s*bilgisi)?|allergens?(\s*info)?)\s*:?$/i;
     const allergenRe = /^alerjen|^allergen/i;
+    const actionButtonRe = /^(sepete ekle|ekle|add to cart|order now|satın al|sepet|buy now)$/i;
 
     // Document order lets us bind items to the heading that precedes them.
     const order = new Map<any, number>();
@@ -301,11 +302,12 @@ export class ScraperService {
     const nameNodeIn = (node: cheerio.Cheerio<any>): any | undefined => {
       const candidates = node
         .find('h1,h2,h3,h4,h5,h6,[class*="title"],[class*="name"],[class*="baslik"]')
+        .not('button, [id*="button"], [class*="button"], [id*="basket"]')
         .toArray();
       for (const candidate of candidates) {
         const text = $(candidate).text().replace(/\s+/g, ' ').trim();
         if (!text || text.length < 2 || text.length > 120) continue;
-        if (nutritionHeadingRe.test(text) || nutritionLabelRe.test(text)) continue;
+        if (nutritionHeadingRe.test(text) || nutritionLabelRe.test(text) || actionButtonRe.test(text)) continue;
         if (priceRe.test(text)) continue;
         return candidate;
       }
@@ -623,6 +625,86 @@ export class ScraperService {
     return categories.filter((c) => c.items.length > 0);
   }
 
+  /** Pass 2a: TGOMemek / Trendyol Go / Uber Eats SPA specific DOM extractor. */
+  private static extractFromTgoYemek($: cheerio.CheerioAPI, baseUrl: string): IMenuCategory[] {
+    const sections = $('section[id], [class*="section"]');
+    if (!sections.length) return [];
+
+    const categories: IMenuCategory[] = [];
+    const actionButtonRe = /^(sepete ekle|ekle|add to cart|order now|satın al|sepet)$/i;
+
+    sections.each((_, section) => {
+      const $section = $(section);
+      const headingEl = $section.find('h1, h2, h3, h4, h5, [class*="title"]').first();
+      if (!headingEl.length) return;
+
+      const categoryName = headingEl
+        .text()
+        .replace(/\s*\(\d+\s*[Üu]r[uü]n\)/i, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      if (!categoryName || categoryName.length < 2 || categoryName.length > 90) return;
+
+      const items: IMenuItem[] = [];
+
+      $section.find('[role="button"], [class*="product"], [class*="card"]').each((_, cardEl) => {
+        const $card = $(cardEl);
+
+        const nameCandidate = $card
+          .find('h6, h5, h4, h3, [class*="title"], [class*="name"]')
+          .not('button, [id*="button"], [class*="button"], [id*="basket"]')
+          .toArray()
+          .map((el) => $(el).text().replace(/\s+/g, ' ').trim())
+          .find((text) => text && text.length >= 2 && text.length <= 120 && !actionButtonRe.test(text));
+
+        if (!nameCandidate) return;
+
+        let priceText = $card.find('.text-primary, [class*="price"]').not('.line-through').first().text().trim();
+        if (!priceText) {
+          priceText = $card.text();
+        }
+
+        const price = this.parsePrice(priceText);
+        if (price === null) return;
+
+        const descEl = $card.find('[class*="desc"], [class*="aciklama"], p').first();
+        const description = descEl.length ? descEl.text().replace(/\s+/g, ' ').trim() : undefined;
+
+        const image = this.extractImageFromElement($card, baseUrl);
+
+        items.push({
+          item_id: this.slug(`${categoryName}:${nameCandidate}`, 'item'),
+          name: nameCandidate,
+          description: description && description !== nameCandidate ? description : undefined,
+          price,
+          currency: this.detectCurrency($card.text()) || 'TRY',
+          original_image_url: image,
+          is_available: true,
+        });
+      });
+
+      if (items.length > 0) {
+        let existing = categories.find((c) => c.name === categoryName);
+        if (!existing) {
+          existing = {
+            category_id: this.slug(categoryName, 'cat'),
+            name: categoryName,
+            items: [],
+          };
+          categories.push(existing);
+        }
+        for (const item of items) {
+          if (!existing.items.some((i) => i.name === item.name && i.price === item.price)) {
+            existing.items.push(item);
+          }
+        }
+      }
+    });
+
+    return categories.filter((c) => c.items.length > 0);
+  }
+
   /** Pass 2b: Akınsoft QR Menu platform specific DOM extractor. */
   private static extractFromAkinsoft($: cheerio.CheerioAPI, baseUrl: string): IMenuCategory[] {
     const productContainers = $('.product-container, [class*="product-container"]');
@@ -699,6 +781,213 @@ export class ScraperService {
         });
       }
     }
+
+    return categories.filter((c) => c.items.length > 0);
+  }
+
+  /** Pass 2c: Next.js __NEXT_DATA__ & captured API JSON extractor (Yemeksepeti / Delivery Hero / SPA). */
+  private static extractFromNextData($: cheerio.CheerioAPI, baseUrl: string): IMenuCategory[] {
+    const jsonContents: any[] = [];
+
+    // 1. Collect __NEXT_DATA__
+    $('script#\\__NEXT_DATA__, script[id="__NEXT_DATA__"]').each((_, el) => {
+      const text = $(el).contents().text().trim();
+      if (!text) return;
+      try {
+        jsonContents.push(JSON.parse(text));
+      } catch {}
+    });
+
+    // 2. Collect captured API responses from RenderService Playwright network interception
+    $('script.pf-captured-api, script[class="pf-captured-api"]').each((_, el) => {
+      const text = $(el).contents().text().trim();
+      if (!text) return;
+      try {
+        jsonContents.push(JSON.parse(text));
+      } catch {}
+    });
+
+    // 3. Fallback to any script containing json with categories or menu
+    if (!jsonContents.length) {
+      $('script[type="application/json"]').each((_, el) => {
+        const id = $(el).attr('id') || '';
+        if (id === '__NEXT_DATA__') return;
+        const text = $(el).contents().text().trim();
+        if (!text || text.length < 50) return;
+        try {
+          const parsed = JSON.parse(text);
+          jsonContents.push(parsed);
+        } catch {}
+      });
+    }
+
+    const categories: IMenuCategory[] = [];
+    const seenItems = new Set<string>();
+
+    const processProduct = (prod: any, defaultCatName: string): { item: IMenuItem; catName: string } | null => {
+      if (!prod || typeof prod !== 'object') return null;
+
+      const name = String(prod.name || prod.title || prod.productName || prod.label || '').replace(/\s+/g, ' ').trim();
+      if (!name || name.length < 2 || name.length > 150) return null;
+
+      let price: number | null = null;
+      if (typeof prod.price === 'number') {
+        price = prod.price;
+      } else if (typeof prod.unit_price === 'number') {
+        price = prod.unit_price;
+      } else if (typeof prod.price_after_discount === 'number') {
+        price = prod.price_after_discount;
+      } else if (typeof prod.priceBeforeDiscount === 'number') {
+        price = prod.priceBeforeDiscount;
+      } else if (prod.priceObject?.price !== undefined) {
+        price = Number(prod.priceObject.price);
+      } else if (prod.price && typeof prod.price === 'object') {
+        price = Number(prod.price.amount || prod.price.value || prod.price.price || 0);
+      } else if (typeof prod.price === 'string') {
+        price = ScraperService.parsePrice(prod.price);
+      }
+
+      if (price === null || !Number.isFinite(price)) price = 0;
+
+      const desc = String(prod.description || prod.desc || prod.short_description || '').replace(/\s+/g, ' ').trim();
+      const description = desc && desc !== name ? desc : undefined;
+
+      let rawImg = prod.fileUrl || prod.logoUrl || prod.imageUrl || prod.image || prod.avatar || prod.hero_image || prod.photo;
+      if (Array.isArray(rawImg)) rawImg = rawImg[0];
+      if (typeof rawImg === 'object' && rawImg) rawImg = rawImg.url || rawImg.fileUrl || rawImg.src;
+
+      let original_image_url: string | undefined;
+      if (typeof rawImg === 'string' && rawImg && !rawImg.startsWith('data:')) {
+        try {
+          original_image_url = ImageService.optimizeUrl(new URL(rawImg, baseUrl).toString());
+        } catch {
+          original_image_url = undefined;
+        }
+      }
+
+      const catName = String(prod.categoryName || prod.category_name || prod.category || defaultCatName || 'Menü').replace(/\s+/g, ' ').trim();
+
+      const itemKey = `${catName}:${name}`.toLowerCase();
+      if (seenItems.has(itemKey)) return null;
+      seenItems.add(itemKey);
+
+      return {
+        catName,
+        item: {
+          item_id: ScraperService.slug(itemKey, 'item'),
+          name,
+          description,
+          price,
+          currency: prod.currency || 'TRY',
+          original_image_url,
+          is_available: prod.isAvailable !== false && prod.is_available !== false,
+        },
+      };
+    };
+
+    const traverse = (node: any, currentCategory = 'Menü', depth = 0): void => {
+      if (!node || depth > 12) return;
+
+      if (Array.isArray(node)) {
+        for (const element of node) {
+          traverse(element, currentCategory, depth + 1);
+        }
+        return;
+      }
+
+      if (typeof node !== 'object') return;
+
+      // Category node check
+      const catName = node.name || node.title || node.categoryName || node.category_name;
+      const productsArray = node.products || node.items || node.dishes || node.entities || node.menu_items || node.menuItems;
+
+      if (typeof catName === 'string' && Array.isArray(productsArray) && productsArray.length > 0) {
+        const catTitle = catName.replace(/\s+/g, ' ').trim();
+        for (const prod of productsArray) {
+          const res = processProduct(prod, catTitle);
+          if (res) {
+            let cat = categories.find((c) => c.name === res.catName);
+            if (!cat) {
+              cat = { category_id: ScraperService.slug(res.catName, 'cat'), name: res.catName, items: [] };
+              categories.push(cat);
+            }
+            cat.items.push(res.item);
+          }
+        }
+      }
+
+      // Continue deep traversal for other keys
+      for (const key of Object.keys(node)) {
+        if (key === 'products' || key === 'items' || key === 'dishes' || key === 'entities') continue;
+        traverse(node[key], currentCategory, depth + 1);
+      }
+    };
+
+    for (const json of jsonContents) {
+      traverse(json);
+    }
+
+    return categories.filter((c) => c.items.length > 0);
+  }
+
+  /** Pass 2d: Yemeksepeti / Delivery Hero DOM extractor. */
+  private static extractFromYemeksepeti($: cheerio.CheerioAPI, baseUrl: string): IMenuCategory[] {
+    const productCards = $('[data-qa="product-card"], [data-testid="product-card"], [class*="product-card"]');
+    if (!productCards.length) return [];
+
+    const categories: IMenuCategory[] = [];
+    const claimedKeys = new Set<string>();
+
+    productCards.each((_, el) => {
+      const $card = $(el);
+
+      const titleEl = $card.find('[data-qa="product-title"], [data-testid="product-title"], [class*="product-title"], [class*="product-name"], h3, h4').first();
+      const priceEl = $card.find('[data-qa="product-price"], [data-testid="product-price"], [class*="product-price"], [class*="price"]').first();
+
+      const name = titleEl.text().replace(/\s+/g, ' ').trim();
+      const priceText = priceEl.text().replace(/\s+/g, ' ').trim();
+      const price = ScraperService.parsePrice(priceText);
+
+      if (!name || price === null) return;
+
+      const descEl = $card.find('[data-qa="product-description"], [class*="product-description"], [class*="description"], p').first();
+      const description = descEl.length ? descEl.text().replace(/\s+/g, ' ').trim() : undefined;
+
+      const categoryContainer = $card.closest('[data-qa="menu-category"], [data-testid="vendor-menu-category"], section, [class*="category"]');
+      let catName = 'Menü';
+      if (categoryContainer.length) {
+        const catHead = categoryContainer.find('[data-qa="category-title"], h2, h3, [class*="category-title"]').first();
+        if (catHead.length) {
+          catName = catHead.text().replace(/\s+/g, ' ').trim() || 'Menü';
+        }
+      }
+
+      const key = `${catName}:${name}`.toLowerCase();
+      if (claimedKeys.has(key)) return;
+      claimedKeys.add(key);
+
+      const image = ScraperService.extractImageFromElement($card, baseUrl);
+
+      let category = categories.find((c) => c.name === catName);
+      if (!category) {
+        category = {
+          category_id: ScraperService.slug(catName, 'cat'),
+          name: catName,
+          items: [],
+        };
+        categories.push(category);
+      }
+
+      category.items.push({
+        item_id: ScraperService.slug(key, 'item'),
+        name,
+        description: description && description !== name ? description : undefined,
+        price,
+        currency: ScraperService.detectCurrency(priceText) || 'TRY',
+        original_image_url: image,
+        is_available: true,
+      });
+    });
 
     return categories.filter((c) => c.items.length > 0);
   }
@@ -1041,6 +1330,21 @@ export class ScraperService {
 
           let pageCategories = this.extractFromJsonLd($);
           let pageMethod = pageCategories.length ? 'schema_org' : '';
+
+          if (!pageCategories.length) {
+            pageCategories = this.extractFromNextData($, page.url);
+            pageMethod = pageCategories.length ? 'next_data_json' : '';
+          }
+
+          if (!pageCategories.length) {
+            pageCategories = this.extractFromYemeksepeti($, page.url);
+            pageMethod = pageCategories.length ? 'yemeksepeti_dom' : '';
+          }
+
+          if (!pageCategories.length) {
+            pageCategories = this.extractFromTgoYemek($, page.url);
+            pageMethod = pageCategories.length ? 'tgoyemek_dom' : '';
+          }
 
           if (!pageCategories.length) {
             pageCategories = this.extractFromAkinsoft($, page.url);
