@@ -394,6 +394,8 @@
     const menu = venue.menu || {};
     const categories = menu.categories || [];
     const itemCount = categories.reduce((sum, c) => sum + (c.items || []).length, 0);
+    const itemPhotoCount = categories.flatMap((c) => c.items || []).filter((i) => i.webp_image_url || i.original_image_url).length;
+    const totalPhotoCount = (venue.photos || []).length + itemPhotoCount;
     const social = contacts.social_media || {};
 
     const badge = (on, onText, offText, onColor) => on
@@ -488,7 +490,7 @@
           <div class="flex items-center justify-between text-slate-400 mb-2">
             <span><i class="fa-solid fa-book-open text-amber-400"></i>
               ${categories.length} kategori · ${itemCount} ürün
-              ${(venue.photos || []).length ? ` · ${venue.photos.length} foto` : ''}</span>
+              ${totalPhotoCount ? ` · ${totalPhotoCount} foto` : ''}</span>
             <span class="text-[0.65rem] text-slate-600">${esc(menu.extraction_method || 'none')}${
               menu.pages_crawled > 1 ? ` · ${menu.pages_crawled} sayfa` : ''}</span>
           </div>
