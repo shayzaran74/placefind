@@ -651,6 +651,30 @@ async function run(): Promise<void> {
   const ysCategories = (ScraperService as any).extractFromYemeksepeti($ys, 'https://www.yemeksepeti.com');
   check('extractFromYemeksepeti parses Yemeksepeti DOM structure', ysCategories.length === 1 && ysCategories[0].items[0].name === 'Cheesecake' && ysCategories[0].items[0].price === 140, ysCategories[0]?.items[0]?.name);
 
+  // Test cleanAndDeduplicateMenu
+  const rawTestMenu = [
+    {
+      category_id: 'cat_sezon',
+      name: 'Sezona Özeller',
+      items: [
+        { item_id: 'item_1', name: 'Susamlı Kıymalı Sandviç XXL', price: 440, is_available: true, currency: 'TRY' },
+        { item_id: 'item_2', name: 'Özel Kış Kahvesi', price: 200, is_available: true, currency: 'TRY' }
+      ]
+    },
+    {
+      category_id: 'cat_sandvic',
+      name: 'Sandviçler',
+      items: [
+        { item_id: 'item_1_dup', name: 'Susamlı Kıymalı Sandviç XXL', price: 440, is_available: true, currency: 'TRY' }
+      ]
+    }
+  ];
+  const cleanedMenu = ScraperService.cleanAndDeduplicateMenu(rawTestMenu as any);
+  const sandvicCat = cleanedMenu.find((c) => c.name === 'Sandviçler');
+  const sezonCat = cleanedMenu.find((c) => c.name === 'Sezona Özeller');
+  check('cleanAndDeduplicateMenu keeps item in primary category', Boolean(sandvicCat && sandvicCat.items.some((i) => i.name === 'Susamlı Kıymalı Sandviç XXL')));
+  check('cleanAndDeduplicateMenu removes duplicate from promotional category', Boolean(sezonCat && !sezonCat.items.some((i) => i.name === 'Susamlı Kıymalı Sandviç XXL')));
+
   // ------------------------------------------------------- webp pipeline
   section('7. WebP image pipeline');
   const sharp = (await import('sharp')).default;

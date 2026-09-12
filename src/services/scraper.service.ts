@@ -1265,6 +1265,60 @@ export class ScraperService {
   }
 
   /**
+   * Deduplicates products across categories.
+   *
+   * Promotional or featured categories (e.g. "Sezona Özeller", "Öne Çıkanlar",
+   * "Popüler", "Fırsatlar") often repeat products that belong in primary categories
+   * (e.g. "Sandviçler", "Kahveler"). This method prioritizes keeping items in their
+   * primary categories and ensures product names are unique across the venue menu,
+   * preventing duplicate warnings during POS/Geato imports.
+   */
+  public static cleanAndDeduplicateMenu(categories: IMenuCategory[]): IMenuCategory[] {
+    if (!categories || !categories.length) return [];
+
+    const promoCategoryRe =
+      /^(sezona [öo]zeller|ö[ne] [çc][ıi]kanlar|pop[üu]ler|şefin se[çc]imleri|f[ıi]rsatlar|kampanyalar|promosyonlar|en [çc]ok satanlar|featured|popular|top sellers|discounted)$/i;
+
+    const primaryCats: IMenuCategory[] = [];
+    const promoCats: IMenuCategory[] = [];
+
+    for (const cat of categories) {
+      if (promoCategoryRe.test(cat.name.trim())) {
+        promoCats.push(cat);
+      } else {
+        primaryCats.push(cat);
+      }
+    }
+
+    const orderedCats = [...primaryCats, ...promoCats];
+    const claimedProductNames = new Set<string>();
+    const cleanedCategoriesMap = new Map<string, IMenuCategory>();
+
+    for (const cat of orderedCats) {
+      const uniqueItems: IMenuItem[] = [];
+
+      for (const item of cat.items || []) {
+        const normName = item.name.toLowerCase().trim();
+        if (claimedProductNames.has(normName)) continue;
+
+        claimedProductNames.add(normName);
+        uniqueItems.push(item);
+      }
+
+      if (uniqueItems.length > 0) {
+        cleanedCategoriesMap.set(cat.category_id, {
+          ...cat,
+          items: uniqueItems,
+        });
+      }
+    }
+
+    return categories
+      .map((original) => cleanedCategoriesMap.get(original.category_id))
+      .filter((c): c is IMenuCategory => Boolean(c && c.items && c.items.length > 0));
+  }
+
+  /**
    * Names an unnamed section after the link that led to it. Section pages that
    * print no heading of their own would otherwise all merge into one bucket
    * called "Menü", losing the menu's structure.
@@ -1377,6 +1431,10 @@ export class ScraperService {
           methods.add(pageMethod);
           sourcePages.push(page.url);
         }
+
+        const cleanedCats = this.cleanAndDeduplicateMenu(categories);
+        categories.length = 0;
+        categories.push(...cleanedCats);
 
         // Structured data is only claimed when every contributing page had it.
         method = methods.size
