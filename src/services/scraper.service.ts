@@ -906,8 +906,29 @@ export class ScraperService {
       if (typeof node !== 'object') return;
 
       // Category node check
-      const catName = node.name || node.title || node.categoryName || node.category_name;
-      const productsArray = node.products || node.items || node.dishes || node.entities || node.menu_items || node.menuItems;
+      const catName =
+        node.name ||
+        node.title ||
+        node.categoryName ||
+        node.category_name ||
+        node.categoryTitle ||
+        node.headline ||
+        node.display_name ||
+        node.label ||
+        currentCategory;
+
+      const productsArray =
+        node.products ||
+        node.items ||
+        node.dishes ||
+        node.entities ||
+        node.menu_items ||
+        node.menuItems ||
+        node.product_cards ||
+        node.cards ||
+        node.product_list ||
+        node.elements ||
+        node.components;
 
       if (typeof catName === 'string' && Array.isArray(productsArray) && productsArray.length > 0) {
         const catTitle = catName.replace(/\s+/g, ' ').trim();
@@ -926,8 +947,22 @@ export class ScraperService {
 
       // Continue deep traversal for other keys
       for (const key of Object.keys(node)) {
-        if (key === 'products' || key === 'items' || key === 'dishes' || key === 'entities') continue;
-        traverse(node[key], currentCategory, depth + 1);
+        if (
+          key === 'products' ||
+          key === 'items' ||
+          key === 'dishes' ||
+          key === 'entities' ||
+          key === 'menu_items' ||
+          key === 'menuItems' ||
+          key === 'product_cards' ||
+          key === 'cards' ||
+          key === 'product_list' ||
+          key === 'elements' ||
+          key === 'components'
+        )
+          continue;
+
+        traverse(node[key], typeof catName === 'string' && catName.length > 1 ? catName : currentCategory, depth + 1);
       }
     };
 
@@ -961,12 +996,28 @@ export class ScraperService {
       const descEl = $card.find('[data-qa="product-description"], [class*="product-description"], [class*="description"], p').first();
       const description = descEl.length ? descEl.text().replace(/\s+/g, ' ').trim() : undefined;
 
-      const categoryContainer = $card.closest('[data-qa="menu-category"], [data-testid="vendor-menu-category"], section, [class*="category"]');
       let catName = 'Menü';
+      const categoryContainer = $card.closest('[data-qa="menu-category"], [data-testid="vendor-menu-category"], [data-testid="vendor-menu"], section, [class*="category"], [class*="menu-category"]');
       if (categoryContainer.length) {
-        const catHead = categoryContainer.find('[data-qa="category-title"], h2, h3, [class*="category-title"]').first();
+        const catHead = categoryContainer.find('[data-qa="category-title"], [data-testid="category-title"], h2, h3, [class*="category-title"], [class*="category-name"]').first();
         if (catHead.length) {
           catName = catHead.text().replace(/\s+/g, ' ').trim() || 'Menü';
+        }
+      }
+
+      if (catName === 'Menü') {
+        let prevHead = $card.prevAll('h2, h3, h4, [data-qa="category-title"], [data-testid="category-title"], [class*="category-title"], [class*="category-name"]').first();
+        if (!prevHead.length) {
+          prevHead = $card.parent().prevAll('h2, h3, h4, [data-qa="category-title"], [data-testid="category-title"], [class*="category-title"]').first();
+        }
+        if (!prevHead.length) {
+          prevHead = $card.closest('div, section').prevAll().find('h2, h3, h4, [data-qa="category-title"], [data-testid="category-title"], [class*="category-title"]').last();
+        }
+        if (prevHead.length) {
+          const text = prevHead.text().replace(/\s+/g, ' ').trim();
+          if (text && text.length >= 2 && text.length <= 90) {
+            catName = text;
+          }
         }
       }
 
