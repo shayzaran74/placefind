@@ -635,7 +635,7 @@ export class ScraperService {
 
   /** Pass 2a: TGOMemek / Trendyol Go / Uber Eats SPA specific DOM extractor. */
   private static extractFromTgoYemek($: cheerio.CheerioAPI, baseUrl: string): IMenuCategory[] {
-    const sections = $('section[id], [class*="section"]');
+    const sections = $('section[id*="cat"], section[class*="cat"], [data-testid*="category-section"], [class*="category-section"], [class*="CategorySection"]');
     if (!sections.length) return [];
 
     const categories: IMenuCategory[] = [];
@@ -643,6 +643,8 @@ export class ScraperService {
 
     sections.each((_, section) => {
       const $section = $(section);
+      if ($section.find('section[id*="cat"], section[class*="cat"], [class*="category-section"]').length > 0) return;
+
       const headingEl = $section.find('h1, h2, h3, h4, h5, [class*="title"]').first();
       if (!headingEl.length) return;
 
@@ -832,11 +834,23 @@ export class ScraperService {
     const categories: IMenuCategory[] = [];
     const seenItems = new Set<string>();
 
+    const isProduct = (obj: any): boolean => {
+      if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return false;
+      const name = obj.name || obj.title || obj.productName || obj.label;
+      if (typeof name !== 'string' || !name.trim() || name.length < 2 || name.length > 150) return false;
+
+      const hasPrice = obj.price !== undefined || obj.unit_price !== undefined || obj.price_after_discount !== undefined || obj.priceObject !== undefined;
+      const hasImage = Boolean(obj.fileUrl || obj.imageUrl || obj.image || obj.logoUrl || obj.photo || obj.avatar || obj.src);
+      const hasDesc = Boolean(obj.description || obj.desc || obj.short_description);
+      const isProdType = obj.type === 'product' || (obj.__typename && String(obj.__typename).toLowerCase().includes('product')) || Boolean(obj.productId || obj.product_id);
+
+      return hasPrice || hasImage || hasDesc || isProdType;
+    };
+
     const processProduct = (prod: any, defaultCatName: string): { item: IMenuItem; catName: string } | null => {
-      if (!prod || typeof prod !== 'object') return null;
+      if (!isProduct(prod)) return null;
 
       const name = String(prod.name || prod.title || prod.productName || prod.label || '').replace(/\s+/g, ' ').trim();
-      if (!name || name.length < 2 || name.length > 150) return null;
 
       let price: number | null = null;
       if (typeof prod.price === 'number') {
@@ -873,7 +887,10 @@ export class ScraperService {
         }
       }
 
-      const catName = String(prod.categoryName || prod.category_name || prod.category || defaultCatName || 'Menü').replace(/\s+/g, ' ').trim();
+      const explicitCat = prod.categoryName || prod.category_name || prod.category;
+      const catName = (typeof explicitCat === 'string' && explicitCat.length >= 2 && explicitCat.length <= 90
+        ? explicitCat
+        : defaultCatName || 'Menü').replace(/\s+/g, ' ').trim();
 
       const itemKey = `${catName}:${name}`.toLowerCase();
       if (seenItems.has(itemKey)) return null;
@@ -905,71 +922,51 @@ export class ScraperService {
 
       if (typeof node !== 'object') return;
 
-      // Category node check: only extract category name when node actually owns a products array
-      let catName: string | undefined;
-      const productsArray =
-        node.products ||
-        node.items ||
-        node.dishes ||
-        node.entities ||
-        node.menu_items ||
-        node.menuItems ||
-        node.product_cards ||
-        node.cards ||
-        node.product_list ||
-        node.elements ||
-        node.components;
+      for (const [key, val] of Object.entries(node)) {
+        if (!Array.isArray(val) || val.length === 0) continue;
 
-      if (Array.isArray(productsArray) && productsArray.length > 0) {
-        const rawCat =
-          node.name ||
-          node.title ||
-          node.categoryName ||
-          node.category_name ||
-          node.categoryTitle ||
-          node.headline ||
-          node.display_name ||
-          node.label;
-        if (typeof rawCat === 'string' && rawCat.length >= 2 && rawCat.length <= 90) {
-          catName = rawCat.replace(/\s+/g, ' ').trim();
-        }
-      }
+        const hasProducts = val.some((item) => isProduct(item));
+        if (hasProducts) {
+          let catTitle = currentCategory;
+          const rawCat =
+            node.name ||
+            node.title ||
+            node.categoryName ||
+            node.category_name ||
+            node.categoryTitle ||
+            node.headline ||
+            node.display_name ||
+            node.label;
+          if (typeof rawCat === 'string' && rawCat.length >= 2 && rawCat.length <= 90) {
+            catTitle = rawCat.replace(/\s+/g, ' ').trim();
+          }
 
-      const activeCat = catName || currentCategory;
-
-      if (typeof activeCat === 'string' && activeCat && activeCat !== 'Menü' && Array.isArray(productsArray) && productsArray.length > 0) {
-        const catTitle = activeCat.replace(/\s+/g, ' ').trim();
-        for (const prod of productsArray) {
-          const res = processProduct(prod, catTitle);
-          if (res) {
-            let cat = categories.find((c) => c.name === res.catName);
-            if (!cat) {
-              cat = { category_id: ScraperService.slug(res.catName, 'cat'), name: res.catName, items: [] };
-              categories.push(cat);
+          for (const item of val) {
+            const res = processProduct(item, catTitle);
+            if (res) {
+              let cat = categories.find((c) => c.name === res.catName);
+              if (!cat) {
+                cat = { category_id: ScraperService.slug(res.catName, 'cat'), name: res.catName, items: [] };
+                categories.push(cat);
+              }
+              cat.items.push(res.item);
             }
-            cat.items.push(res.item);
           }
         }
       }
 
-      // Continue deep traversal for other keys
-      for (const key of Object.keys(node)) {
-        if (
-          key === 'products' ||
-          key === 'items' ||
-          key === 'dishes' ||
-          key === 'entities' ||
-          key === 'menu_items' ||
-          key === 'menuItems' ||
-          key === 'product_cards' ||
-          key === 'cards' ||
-          key === 'product_list' ||
-          key === 'elements' ||
-          key === 'components'
-        )
-          continue;
+      for (const [key, val] of Object.entries(node)) {
+        if (typeof val === 'object' && val !== null) {
+          let nextCatName = currentCategory;
+          const rawCat = node.name || node.title || node.categoryName || node.category_name || node.categoryTitle || node.headline || node.display_name || node.label;
+          if (typeof rawCat === 'string' && rawCat.length >= 2 && rawCat.length <= 90) {
+            if (depth > 1 || key === 'categories' || key === 'menuCategories' || key === 'menu') {
+              nextCatName = rawCat.replace(/\s+/g, ' ').trim();
+            }
+          }
 
-        traverse(node[key], catName || currentCategory, depth + 1);
+          traverse(val, nextCatName, depth + 1);
+        }
       }
     };
 
@@ -982,98 +979,72 @@ export class ScraperService {
 
   /** Pass 2d: Yemeksepeti / Delivery Hero DOM extractor. */
   private static extractFromYemeksepeti($: cheerio.CheerioAPI, baseUrl: string): IMenuCategory[] {
+    const productCards = $('[data-qa="product-card"], [data-testid="product-card"], [data-qa="menu-product-item"], [data-testid="vendor-menu-product-item"], [class*="product-card"], [class*="ProductCard"], [class*="product-item"], [class*="ProductItem"]');
+    if (!productCards.length) return [];
+
     const categories: IMenuCategory[] = [];
     const claimedKeys = new Set<string>();
+    const actionButtonRe = /^(sepete ekle|ekle|add to cart|order now|satın al|sepet|buy now)$/i;
 
-    // Strategy A: Section-based category extraction
-    const categorySections = $('[data-qa="menu-category"], [data-testid="vendor-menu-category"], section[class*="category"], div[class*="category-section"]');
+    // Collect headings and product cards in exact document order
+    const elements: Array<{ type: 'heading' | 'card'; name?: string; node: any }> = [];
 
-    if (categorySections.length > 0) {
-      categorySections.each((_, sectionEl) => {
-        const $sec = $(sectionEl);
-        const headEl = $sec.find('[data-qa="category-title"], [data-testid="category-title"], h2, h3, [class*="category-title"]').first();
-        const catName = headEl.text().replace(/\s*\(\d+\s*[Üu]r[uü]n\)/i, '').replace(/\s+/g, ' ').trim();
+    $('*').each((_, el) => {
+      const $el = $(el);
+      const tag = ((el as any).name || (el as any).tagName || '').toLowerCase();
 
-        if (!catName || catName.length < 2 || catName.length > 90) return;
+      const isHeading =
+        tag === 'h2' ||
+        tag === 'h3' ||
+        $el.is('[data-qa="category-title"], [data-testid="category-title"], [data-qa="menu-category-title"], [data-testid="vendor-menu-category-title"], [class*="category-title"], [class*="CategoryTitle"], [class*="category-name"], [class*="CategoryName"]');
 
-        const cards = $sec.find('[data-qa="product-card"], [data-testid="product-card"], [class*="product-card"]');
-        if (!cards.length) return;
-
-        const items: IMenuItem[] = [];
-
-        cards.each((_, cardEl) => {
-          const $card = $(cardEl);
-          const titleEl = $card.find('[data-qa="product-title"], [data-testid="product-title"], [class*="product-title"], [class*="product-name"], h3, h4').first();
-          const priceEl = $card.find('[data-qa="product-price"], [data-testid="product-price"], [class*="product-price"], [class*="price"]').first();
-
-          const name = titleEl.text().replace(/\s+/g, ' ').trim();
-          const priceText = priceEl.text().replace(/\s+/g, ' ').trim();
-          const price = ScraperService.parsePrice(priceText);
-
-          if (!name || price === null) return;
-
-          const key = `${catName}:${name}`.toLowerCase();
-          if (claimedKeys.has(key)) return;
-          claimedKeys.add(key);
-
-          const descEl = $card.find('[data-qa="product-description"], [class*="product-description"], [class*="description"], p').first();
-          const description = descEl.length ? descEl.text().replace(/\s+/g, ' ').trim() : undefined;
-
-          const image = ScraperService.extractImageFromElement($card, baseUrl);
-
-          items.push({
-            item_id: ScraperService.slug(key, 'item'),
-            name,
-            description: description && description !== name ? description : undefined,
-            price,
-            currency: ScraperService.detectCurrency(priceText) || 'TRY',
-            original_image_url: image,
-            is_available: true,
-          });
-        });
-
-        if (items.length > 0) {
-          categories.push({
-            category_id: ScraperService.slug(catName, 'cat'),
-            name: catName,
-            items,
-          });
+      if (isHeading) {
+        if (!$el.closest('[data-qa="product-card"], [data-testid="product-card"], [class*="product-card"], [class*="ProductCard"]').length) {
+          const text = $el.text().replace(/\s*\(\d+\s*[Üu]r[uü]n\)/i, '').replace(/\s+/g, ' ').trim();
+          if (text && text.length >= 2 && text.length <= 90 && !actionButtonRe.test(text)) {
+            elements.push({ type: 'heading', name: text, node: el });
+          }
         }
-      });
-    }
+      } else if ($el.is('[data-qa="product-card"], [data-testid="product-card"], [data-qa="menu-product-item"], [data-testid="vendor-menu-product-item"], [class*="product-card"], [class*="ProductCard"], [class*="product-item"], [class*="ProductItem"]')) {
+        elements.push({ type: 'card', node: el });
+      }
+    });
 
-    // Strategy B: Fallback iterating over product cards without matching root vendor-menu
-    if (!categories.length) {
-      const productCards = $('[data-qa="product-card"], [data-testid="product-card"], [class*="product-card"]');
-      if (!productCards.length) return [];
+    let currentCatName = 'Menü';
 
-      productCards.each((_, el) => {
-        const $card = $(el);
+    for (const entry of elements) {
+      if (entry.type === 'heading' && entry.name) {
+        currentCatName = entry.name;
+      } else if (entry.type === 'card') {
+        const $card = $(entry.node);
 
-        const titleEl = $card.find('[data-qa="product-title"], [data-testid="product-title"], [class*="product-title"], [class*="product-name"], h3, h4').first();
+        const titleEl = $card.find('[data-qa="product-title"], [data-testid="product-title"], [class*="product-title"], [class*="product-name"], [class*="ProductTitle"], h3, h4, h5, h6').first();
         const priceEl = $card.find('[data-qa="product-price"], [data-testid="product-price"], [class*="product-price"], [class*="price"]').first();
 
         const name = titleEl.text().replace(/\s+/g, ' ').trim();
         const priceText = priceEl.text().replace(/\s+/g, ' ').trim();
         const price = ScraperService.parsePrice(priceText);
 
-        if (!name || price === null) return;
+        if (!name || price === null) continue;
 
-        const descEl = $card.find('[data-qa="product-description"], [class*="product-description"], [class*="description"], p').first();
-        const description = descEl.length ? descEl.text().replace(/\s+/g, ' ').trim() : undefined;
-
-        let catName = 'Menü';
-        const categoryContainer = $card.closest('[data-qa="menu-category"], [data-testid="vendor-menu-category"]');
-        if (categoryContainer.length) {
-          const catHead = categoryContainer.find('[data-qa="category-title"], [data-testid="category-title"], h2, h3').first();
-          if (catHead.length) {
-            catName = catHead.text().replace(/\s+/g, ' ').trim() || 'Menü';
+        let catName = currentCatName;
+        const container = $card.closest('[data-qa="category-section"], [data-testid="category-section"], [class*="category-section"]');
+        if (container.length) {
+          const containerHeads = container.find('[data-qa="category-title"], [data-testid="category-title"], h2, h3');
+          if (containerHeads.length === 1) {
+            const headText = containerHeads.first().text().replace(/\s*\(\d+\s*[Üu]r[uü]n\)/i, '').replace(/\s+/g, ' ').trim();
+            if (headText && headText.length >= 2 && headText.length <= 90) {
+              catName = headText;
+            }
           }
         }
 
         const key = `${catName}:${name}`.toLowerCase();
-        if (claimedKeys.has(key)) return;
+        if (claimedKeys.has(key)) continue;
         claimedKeys.add(key);
+
+        const descEl = $card.find('[data-qa="product-description"], [class*="product-description"], [class*="description"], p').first();
+        const description = descEl.length ? descEl.text().replace(/\s+/g, ' ').trim() : undefined;
 
         const image = ScraperService.extractImageFromElement($card, baseUrl);
 
@@ -1096,7 +1067,7 @@ export class ScraperService {
           original_image_url: image,
           is_available: true,
         });
-      });
+      }
     }
 
     return categories.filter((c) => c.items.length > 0);
@@ -1518,6 +1489,12 @@ export class ScraperService {
           if (!pageCategories.length) {
             pageCategories = this.extractFromDom($, page.url);
             pageMethod = pageCategories.length ? page.method : '';
+          } else if (pageCategories.length === 1 && pageCategories[0].items.length > 8) {
+            const domCats = this.extractFromDom($, page.url);
+            if (domCats.length > 1) {
+              pageCategories = domCats;
+              pageMethod = page.method || 'dom';
+            }
           }
 
           // Last resort: the site publishes products but no prices.

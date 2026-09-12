@@ -651,6 +651,30 @@ async function run(): Promise<void> {
   const ysCategories = (ScraperService as any).extractFromYemeksepeti($ys, 'https://www.yemeksepeti.com');
   check('extractFromYemeksepeti parses Yemeksepeti DOM structure', ysCategories.length === 1 && ysCategories[0].items[0].name === 'Cheesecake' && ysCategories[0].items[0].price === 140, ysCategories[0]?.items[0]?.name);
 
+  // Multi-category Yemeksepeti DOM test
+  const multiCatDomHtml = `
+    <div data-qa="vendor-menu">
+      <h2 data-qa="category-title">Sezona Özeller</h2>
+      <div data-qa="product-card">
+        <h3 data-qa="product-title">Salted Caramel Latte</h3>
+        <span data-qa="product-price">385,00 TL</span>
+      </div>
+      <h2 data-qa="category-title">Sandviçler</h2>
+      <div data-qa="product-card">
+        <h3 data-qa="product-title">4 Peynirli Bagel Sandviç</h3>
+        <span data-qa="product-price">305,00 TL</span>
+      </div>
+      <h2 data-qa="category-title">Kruvasanlar</h2>
+      <div data-qa="product-card">
+        <h3 data-qa="product-title">Kruvasan Sade</h3>
+        <span data-qa="product-price">190,00 TL</span>
+      </div>
+    </div>
+  `;
+  const $multiDom = cheerio.load(multiCatDomHtml);
+  const multiDomCats = (ScraperService as any).extractFromYemeksepeti($multiDom, 'https://www.yemeksepeti.com');
+  check('extractFromYemeksepeti extracts multiple categories accurately', multiDomCats.length === 3 && multiDomCats.map((c: any) => c.name).join(',') === 'Sezona Özeller,Sandviçler,Kruvasanlar', multiDomCats.map((c: any) => c.name).join(', '));
+
   // Test cleanAndDeduplicateMenu
   const rawTestMenu = [
     {
@@ -670,10 +694,10 @@ async function run(): Promise<void> {
     }
   ];
   const cleanedMenu = ScraperService.cleanAndDeduplicateMenu(rawTestMenu as any);
-  const sandvicCat = cleanedMenu.find((c) => c.name === 'Sandviçler');
-  const sezonCat = cleanedMenu.find((c) => c.name === 'Sezona Özeller');
-  check('cleanAndDeduplicateMenu keeps item in primary category', Boolean(sandvicCat && sandvicCat.items.some((i) => i.name === 'Susamlı Kıymalı Sandviç XXL')));
-  check('cleanAndDeduplicateMenu removes duplicate from promotional category', Boolean(sezonCat && !sezonCat.items.some((i) => i.name === 'Susamlı Kıymalı Sandviç XXL')));
+  const sandvicCat = cleanedMenu.find((c: any) => c.name === 'Sandviçler');
+  const sezonCat = cleanedMenu.find((c: any) => c.name === 'Sezona Özeller');
+  check('cleanAndDeduplicateMenu keeps item in primary category', Boolean(sandvicCat && sandvicCat.items.some((i: any) => i.name === 'Susamlı Kıymalı Sandviç XXL')));
+  check('cleanAndDeduplicateMenu removes duplicate from promotional category', Boolean(sezonCat && !sezonCat.items.some((i: any) => i.name === 'Susamlı Kıymalı Sandviç XXL')));
 
   // ------------------------------------------------------- webp pipeline
   section('7. WebP image pipeline');
