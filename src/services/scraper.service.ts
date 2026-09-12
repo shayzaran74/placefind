@@ -203,6 +203,10 @@ export class ScraperService {
           imgNode.attr('data-src') ||
           imgNode.attr('data-original') ||
           imgNode.attr('data-lazy-src') ||
+          imgNode.attr('data-image') ||
+          imgNode.attr('data-img') ||
+          imgNode.attr('data-photo') ||
+          imgNode.attr('data-url') ||
           imgNode.attr('data-high-res') ||
           imgNode.attr('src');
       }
@@ -218,7 +222,11 @@ export class ScraperService {
         rawSrc =
           photoContainer.attr('data-src') ||
           photoContainer.attr('data-bg') ||
-          photoContainer.attr('data-original');
+          photoContainer.attr('data-original') ||
+          photoContainer.attr('data-image') ||
+          photoContainer.attr('data-img') ||
+          photoContainer.attr('data-photo') ||
+          photoContainer.attr('data-url');
         if (!rawSrc) {
           const style = photoContainer.attr('style') || '';
           const bgMatch = style.match(/url\((['"]?)([^'")]+)\1\)/i);

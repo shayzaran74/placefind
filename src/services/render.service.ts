@@ -171,28 +171,45 @@ export class RenderService {
         // Playwright sayfa kaydırma ve lazy load / sonsuz kaydırma yükletme
         await page
           .evaluate(async () => {
-            document.querySelectorAll('div[role="dialog"], div[class*="login"], div[class*="modal"]').forEach((el) => el.remove());
+            document.querySelectorAll('div[role="dialog"], div[class*="login"], div[class*="modal"], [id*="cookie"], [class*="cookie"]').forEach((el) => el.remove());
             if (document.body) document.body.style.overflow = 'auto';
+
+            document.querySelectorAll('img').forEach((img) => {
+              img.loading = 'eager';
+              const lazySrc = img.getAttribute('data-src') || img.getAttribute('data-original') || img.getAttribute('data-lazy-src') || img.getAttribute('data-image');
+              if (lazySrc && (!img.src || img.src.startsWith('data:'))) {
+                img.src = lazySrc;
+              }
+            });
 
             await new Promise<void>((resolve) => {
               let totalHeight = 0;
-              const distance = 600;
+              const distance = 800;
               let passes = 0;
               const timer = setInterval(() => {
                 window.scrollBy(0, distance);
                 totalHeight += distance;
                 document.querySelectorAll('div[role="dialog"], div[class*="login"], div[class*="modal"]').forEach((el) => el.remove());
                 if (document.body) document.body.style.overflow = 'auto';
+
+                document.querySelectorAll('img').forEach((img) => {
+                  const lazySrc = img.getAttribute('data-src') || img.getAttribute('data-original') || img.getAttribute('data-lazy-src') || img.getAttribute('data-image');
+                  if (lazySrc && (!img.src || img.src.startsWith('data:'))) {
+                    img.src = lazySrc;
+                  }
+                });
+
                 passes++;
-                if (passes >= 15 || totalHeight >= (document.body?.scrollHeight || 10000)) {
+                const maxScroll = Math.max(document.body?.scrollHeight || 0, document.documentElement?.scrollHeight || 0);
+                if (passes >= 45 || totalHeight >= (maxScroll || 30000)) {
                   clearInterval(timer);
                   resolve();
                 }
-              }, 200);
+              }, 120);
             });
           })
           .catch(() => undefined);
-        await page.waitForTimeout(1500).catch(() => undefined); // Resimlerin yüklenmesini bekle
+        await page.waitForTimeout(2000).catch(() => undefined); // Resimlerin yüklenmesini bekle
 
         let html = await page.content();
         if (capturedApiPayloads.length > 0) {
